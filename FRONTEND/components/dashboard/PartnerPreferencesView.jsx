@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { useAuth } from '../../src/context/AuthContext';
 
 export default function PartnerPreferencesView() {
+  const { user } = useAuth();
   const [preferences, setPreferences] = useState({
     ageMin: '22',
     ageMax: '28',
@@ -17,18 +20,74 @@ export default function PartnerPreferencesView() {
 
   const [isSaved, setIsSaved] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchPreferences = async () => {
+      if (user?.profile_id) {
+        try {
+          const response = await axios.get(`http://localhost:5000/api/users/profile/${user.profile_id}/partner-preferences`);
+          const data = response.data.preferences;
+          if (data) {
+            setPreferences({
+              ageMin: data.min_age || '',
+              ageMax: data.max_age || '',
+              heightMin: data.min_height || '',
+              heightMax: data.max_height || '',
+              maritalStatus: data.marital_status || 'Never Married',
+              religion: data.religion || '',
+              caste: data.caste || '',
+              motherTongue: data.mother_tongue || '',
+              education: data.education_level || '',
+              profession: data.preferred_professions || '',
+              location: data.location_preferences || '',
+            });
+          }
+        } catch (error) {
+          console.error("Failed to fetch partner preferences:", error);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+    fetchPreferences();
+  }, [user?.profile_id]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setPreferences((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsSaved(true);
-    setIsEditing(false);
-    setTimeout(() => setIsSaved(false), 3000);
+    if (user?.profile_id) {
+      try {
+        await axios.put(`http://localhost:5000/api/users/profile/${user.profile_id}/partner-preferences`, {
+          min_age: preferences.ageMin,
+          max_age: preferences.ageMax,
+          min_height: preferences.heightMin,
+          max_height: preferences.heightMax,
+          marital_status: preferences.maritalStatus,
+          mother_tongue: preferences.motherTongue,
+          religion: preferences.religion,
+          caste: preferences.caste,
+          education_level: preferences.education,
+          preferred_professions: preferences.profession,
+          location_preferences: preferences.location
+        });
+        setIsSaved(true);
+        setIsEditing(false);
+        setTimeout(() => setIsSaved(false), 3000);
+      } catch (error) {
+        console.error("Failed to update partner preferences:", error);
+        alert("Failed to save preferences. Please try again.");
+      }
+    }
   };
+
+  if (isLoading) {
+    return <div className="p-6 text-center text-sm text-slate-500">Loading preferences...</div>;
+  }
 
   return (
     <div className="w-full flex flex-col gap-6">
@@ -213,8 +272,8 @@ export default function PartnerPreferencesView() {
                 type="text"
                 name="location"
                 value={preferences.location}
-                onChange={handleChange}
-                className="w-full border border-slate-200 rounded-lg py-2 px-3 text-xs bg-slate-50/50 text-charcoal-text focus:outline-none focus:ring-1 focus:ring-deep-maroon"
+                onChange={handleChange} disabled={!isEditing}
+                className="w-full border border-slate-200 rounded-lg py-2 px-3 text-xs bg-slate-50/50 text-charcoal-text disabled:opacity-60 disabled:bg-slate-100/50 disabled:cursor-not-allowed disabled:border-slate-100 focus:outline-none focus:ring-1 focus:ring-deep-maroon"
               />
             </div>
           </div>

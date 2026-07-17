@@ -160,7 +160,7 @@ export const register = async (req, res) => {
     res.status(201).json({
       message: 'User registered successfully',
       accessToken,
-      user: { id: userId, profile_id: profileId, full_name, email_address }
+      user: { id: userId, profile_id: profileId, full_name, email_address, mobile_number }
     });
   } catch (error) {
     console.error('Registration Error:', error);
@@ -217,9 +217,11 @@ export const login = async (req, res) => {
         profile_id: user.profile_id,
         full_name: user.full_name,
         email_address: user.email_address,
+        mobile_number: user.mobile_number,
         religion: user.religion,
         gender: user.gender,
-        created_at: user.created_at
+        created_at: user.created_at,
+        photo_1: user.photo_1
       }
     });
   } catch (error) {

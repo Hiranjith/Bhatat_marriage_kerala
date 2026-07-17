@@ -1,31 +1,84 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axiosInstance from '../../src/utils/axiosInstance';
+import { useAuth } from '../../src/context/AuthContext';
 
 export default function ManagePhotosView() {
+  const { user, updateUser } = useAuth();
+  const profileId = user?.profile_id;
   const [photos, setPhotos] = useState([
-    { id: 1, url: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=400&h=500', isPrimary: true },
-    { id: 2, url: '', isPrimary: false },
-    { id: 3, url: '', isPrimary: false },
-    { id: 4, url: '', isPrimary: false },
+    { id: 'photo_1', url: '', isPrimary: true },
+    { id: 'photo_2', url: '', isPrimary: false },
+    { id: 'photo_3', url: '', isPrimary: false },
+    { id: 'photo_4', url: '', isPrimary: false },
   ]);
+  const [photoToDelete, setPhotoToDelete] = useState(null);
 
-  const handleFileUpload = (id, file) => {
-    if (!file) return;
+  useEffect(() => {
+    if (profileId) {
+      axiosInstance.get(`/users/profile/${profileId}/photos`)
+        .then(response => {
+          const dbPhotos = response.data.photos;
+          setPhotos([
+            { id: 'photo_1', url: dbPhotos.photo_1 || '', isPrimary: true },
+            { id: 'photo_2', url: dbPhotos.photo_2 || '', isPrimary: false },
+            { id: 'photo_3', url: dbPhotos.photo_3 || '', isPrimary: false },
+            { id: 'photo_4', url: dbPhotos.photo_4 || '', isPrimary: false },
+          ]);
+        })
+        .catch(err => console.error("Failed to fetch photos:", err));
+    }
+  }, [profileId]);
 
-    const imageUrl = URL.createObjectURL(file);
+  const handleFileUpload = async (slotId, file) => {
+    if (!file || !profileId) return;
 
-    setPhotos((prev) =>
-      prev.map((photo) =>
-        photo.id === id
-          ? { ...photo, url: imageUrl }
-          : photo
-      )
-    );
+    const formData = new FormData();
+    formData.append('photo', file);
+    formData.append('slot', slotId);
+
+    try {
+      const response = await axiosInstance.post(`/users/profile/${profileId}/photos`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      
+      const newPhotoUrl = response.data.photoUrl;
+
+      setPhotos((prev) =>
+        prev.map((photo) =>
+          photo.id === slotId
+            ? { ...photo, url: newPhotoUrl }
+            : photo
+        )
+      );
+
+      // If updating the primary photo, update the global context so Navbars reflect it!
+      if (slotId === 'photo_1' && updateUser) {
+        updateUser({ ...user, photo_1: newPhotoUrl });
+      }
+    } catch (error) {
+      console.error("Failed to upload photo:", error);
+    }
   };
 
-  const deletePhoto = (id) => {
-    setPhotos((prev) =>
-      prev.map((photo) => (photo.id === id ? { ...photo, url: '' } : photo))
-    );
+  const confirmDeletePhoto = async () => {
+    const slotId = photoToDelete;
+    if (!profileId || !slotId) return;
+
+    setPhotoToDelete(null); // Close modal
+
+    try {
+      await axiosInstance.delete(`/users/profile/${profileId}/photos/${slotId}`);
+      setPhotos((prev) =>
+        prev.map((photo) => (photo.id === slotId ? { ...photo, url: '' } : photo))
+      );
+
+      // Clear global context if primary photo is deleted
+      if (slotId === 'photo_1' && updateUser) {
+        updateUser({ ...user, photo_1: null });
+      }
+    } catch (error) {
+      console.error("Failed to delete photo:", error);
+    }
   };
 
   return (
@@ -53,21 +106,8 @@ export default function ManagePhotosView() {
                   )}
 
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                    {!photo.isPrimary && (
-                      <button
-                        onClick={() => {
-                          setPhotos((prev) =>
-                            prev.map((p) => ({ ...p, isPrimary: p.id === photo.id }))
-                          );
-                        }}
-                        className="bg-white hover:bg-slate-50 text-charcoal-text p-1.5 rounded-full shadow hover:scale-105 transition-all cursor-pointer"
-                        title="Make Primary"
-                      >
-                        <span className="material-symbols-outlined text-base leading-none">star</span>
-                      </button>
-                    )}
                     <button
-                      onClick={() => deletePhoto(photo.id)}
+                      onClick={() => setPhotoToDelete(photo.id)}
                       className="bg-red-600 hover:bg-red-700 text-white p-1.5 rounded-full shadow hover:scale-105 transition-all cursor-pointer"
                       title="Delete Photo"
                     >
@@ -103,6 +143,35 @@ export default function ManagePhotosView() {
           ))}
         </div>
       </section>
+
+      {/* Shadcn-like Alert Dialog */}
+      {photoToDelete && (
+        <>
+          <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm transition-opacity" onClick={() => setPhotoToDelete(null)}></div>
+          <div className="fixed inset-0 z-[101] flex items-center justify-center p-4 pointer-events-none">
+            <div className="bg-white rounded-lg shadow-xl border border-slate-100 w-full max-w-md p-6 pointer-events-auto text-left transform transition-all">
+              <h3 className="text-lg font-semibold text-charcoal-text mb-2">Are you absolutely sure?</h3>
+              <p className="text-sm text-soft-gray mb-6">
+                This action cannot be undone. This will permanently delete your photo and remove it from our servers.
+              </p>
+              <div className="flex justify-end gap-2.5">
+                <button
+                  onClick={() => setPhotoToDelete(null)}
+                  className="px-4 py-2 rounded-md text-sm font-semibold border border-slate-200 bg-white text-charcoal-text hover:bg-slate-50 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDeletePhoto}
+                  className="px-4 py-2 rounded-md text-sm font-semibold bg-red-600 text-white hover:bg-red-700 transition-colors cursor-pointer shadow-sm"
+                >
+                  Delete Photo
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

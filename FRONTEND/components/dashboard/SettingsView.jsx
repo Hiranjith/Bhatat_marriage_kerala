@@ -1,20 +1,47 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../src/context/AuthContext';
+import axiosInstance from '../../src/utils/axiosInstance';
 
 export default function SettingsView() {
+  const { user, updateUser } = useAuth();
   const [settings, setSettings] = useState({
-    email: 'arjun.reddy@gmail.com',
-    phone: '+91 9876543210',
+    email: user?.email_address || '',
+    phone: user?.mobile_number || '',
     visibility: 'visible',
     matchAlerts: true,
     weeklyDigest: false,
   });
 
   const [isSaved, setIsSaved] = useState(false);
+  const [error, setError] = useState(null);
 
-  const handleSubmit = (e) => {
+  useEffect(() => {
+    if (user) {
+      setSettings(prev => ({
+        ...prev,
+        email: user.email_address || '',
+        phone: user.mobile_number || '',
+      }));
+    }
+  }, [user]);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsSaved(true);
-    setTimeout(() => setIsSaved(false), 3000);
+    setError(null);
+    try {
+      await axiosInstance.put(`/users/profile/${user.profile_id}/settings`, {
+        email: settings.email,
+        phone: settings.phone,
+      });
+      setIsSaved(true);
+      setTimeout(() => setIsSaved(false), 3000);
+      if (updateUser) {
+        updateUser({ ...user, email_address: settings.email, mobile_number: settings.phone });
+      }
+    } catch (err) {
+      console.error('Error updating settings:', err);
+      setError(err.response?.data?.error || 'Failed to update settings');
+    }
   };
 
   return (
@@ -32,6 +59,12 @@ export default function SettingsView() {
             <div className="text-[11px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200/60 px-3 py-1 rounded-full flex items-center gap-1 animate-fade-in">
               <span className="material-symbols-outlined text-[13px]">check_circle</span>
               Settings Updated!
+            </div>
+          )}
+          {error && (
+            <div className="text-[11px] font-bold text-red-600 bg-red-50 border border-red-200/60 px-3 py-1 rounded-full flex items-center gap-1 animate-fade-in">
+              <span className="material-symbols-outlined text-[13px]">error</span>
+              {error}
             </div>
           )}
         </div>
