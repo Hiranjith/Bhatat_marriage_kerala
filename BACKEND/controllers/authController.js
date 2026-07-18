@@ -286,3 +286,80 @@ export const logout = async (req, res) => {
   res.clearCookie('refreshToken');
   res.status(200).json({ message: 'Logged out successfully' });
 };
+
+export const forgotPassword = async (req, res) => {
+  const { email_address } = req.body;
+
+  try {
+    if (!email_address) {
+      return res.status(400).json({ error: 'Email address is required' });
+    }
+
+    // 1. Find user by email
+    const [users] = await pool.query(
+      'SELECT * FROM user_registration WHERE email_address = ?', 
+      [email_address]
+    );
+
+    if (users.length === 0) {
+      return res.status(404).json({ error: 'Account not found.' });
+    }
+
+    const user = users[0];
+
+    // 2. Generate a new random password
+    const generateRandomPassword = () => {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+      let pass = '';
+      for (let i = 0; i < 8; i++) {
+        pass += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return pass;
+    };
+    
+    const newPassword = generateRandomPassword();
+
+    // 3. Hash the new password
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+
+    // 4. Update the DB
+    await pool.query(
+      'UPDATE user_registration SET password = ? WHERE id = ?', 
+      [hashedPassword, user.id]
+    );
+
+    // 5. Send Email
+    if (process.env.SMTP_USER && process.env.SMTP_PASS) {
+      const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS
+        }
+      });
+
+      const mailOptions = {
+        from: process.env.SMTP_USER,
+        to: email_address,
+        subject: 'Password Reset - Bharat Marriage',
+        text: `Dear ${user.full_name},\n\nWe received a request to reset your password for your Bharat Marriage account.\n\nYour temporary password is: ${newPassword}\n\nFor your security, please log in to your account and change this password immediately.\n\nIf you did not request this password reset, please ignore this email or contact our support team immediately.\n\nBest regards,\nThe Bharat Marriage Team`
+      };
+
+      try {
+        await transporter.sendMail(mailOptions);
+        return res.status(200).json({ message: 'If that email is in our system, we have sent a password to it.' });
+      } catch (emailError) {
+        console.error('Failed to send reset email:', emailError);
+        return res.status(500).json({ error: 'Failed to send email. Please try again later.' });
+      }
+    } else {
+      console.warn('SMTP credentials not provided. Reset email not sent.');
+      return res.status(500).json({ error: 'Email service is not configured.' });
+    }
+
+  } catch (error) {
+    console.error('Forgot Password Error:', error);
+    res.status(500).json({ error: 'Server error during password reset' });
+  }
+};

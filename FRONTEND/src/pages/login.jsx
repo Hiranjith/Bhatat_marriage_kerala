@@ -86,9 +86,9 @@ export default function Login() {
             </div>
 
             <div className="flex justify-end">
-              <a href="#forgot-password" className="text-[10px] font-semibold text-deep-maroon hover:text-primary sm:text-[11px]">
+              <Link to="/forgot-password" className="text-[10px] font-semibold text-deep-maroon hover:text-primary sm:text-[11px]">
                 Forgot password?
-              </a>
+              </Link>
             </div>
 
             <button
@@ -102,7 +102,7 @@ export default function Login() {
 
           <p className="mt-4 text-center text-[10px] text-soft-gray sm:mt-5 sm:text-[11px]">
             New here?{' '}
-            <Link to="/" className="font-semibold text-deep-maroon hover:text-primary">
+            <Link to="/#register" className="font-semibold text-deep-maroon hover:text-primary">
               Create account
             </Link>
           </p>

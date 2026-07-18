@@ -11,7 +11,9 @@ import {
   getUserPhotos,
   getPartnerPreferences,
   updatePartnerPreferences,
-  updateUserSettings
+  updateUserSettings,
+  resetPassword,
+  getProfileCompletion
 } from '../controllers/userController.js';
 
 const router = express.Router();
@@ -57,5 +59,11 @@ router.put('/profile/:profileId/partner-preferences', updatePartnerPreferences);
 
 // PUT /api/users/profile/:profileId/settings
 router.put('/profile/:profileId/settings', updateUserSettings);
+
+// PUT /api/users/profile/:profileId/reset-password
+router.put('/profile/:profileId/reset-password', resetPassword);
+
+// GET /api/users/profile/:profileId/completion
+router.get('/profile/:profileId/completion', getProfileCompletion);
 
 export default router;

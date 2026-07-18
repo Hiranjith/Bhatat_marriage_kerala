@@ -7,7 +7,7 @@ import * as kollavarshamPkg from 'kollavarsham';
 const Kollavarsham = kollavarshamPkg.Kollavarsham || kollavarshamPkg.default || kollavarshamPkg;
 const kollavarshamInstance = new Kollavarsham();
 
-export default function MyProfileView() {
+export default function MyProfileView({ onProfileUpdate }) {
   const { user, login } = useAuth();
   
   const [profileData, setProfileData] = useState({
@@ -28,7 +28,8 @@ export default function MyProfileView() {
     endDasa: '',
     dobMalayalam: '',
     dobEnglish: '',
-    starRasi: '',
+    nakshatra: '',
+    rasi: '',
     fathersName: '',
     fathersJob: '',
     mothersName: '',
@@ -68,7 +69,8 @@ export default function MyProfileView() {
                 const d = new Date(fetchedProfile.date_of_birth);
                 return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
               })() : '',
-              starRasi: (fetchedProfile.nakshatra || '') + (fetchedProfile.rasi ? ` / ${fetchedProfile.rasi}` : ''),
+              nakshatra: fetchedProfile.nakshatra || '',
+              rasi: fetchedProfile.rasi || '',
               fathersName: fetchedProfile.fathers_name || '',
               fathersJob: fetchedProfile.fathers_job || '',
               mothersName: fetchedProfile.mothers_name || '',
@@ -165,6 +167,12 @@ export default function MyProfileView() {
         submitData.dobEnglish = `${parts[2]}-${parts[1]}-${parts[0]}`;
       }
     }
+    
+    if (submitData.nakshatra || submitData.rasi) {
+      submitData.starRasi = `${submitData.nakshatra || ''} / ${submitData.rasi || ''}`;
+    } else {
+      submitData.starRasi = '';
+    }
 
     const planetToEnglish = {
       'ല': 'Lagna',
@@ -204,6 +212,7 @@ export default function MyProfileView() {
         if (profileData.name && user.full_name !== profileData.name) {
           login({ ...user, full_name: profileData.name });
         }
+        if (onProfileUpdate) onProfileUpdate();
         setTimeout(() => setIsSaved(false), 3000);
       })
       .catch(err => {
@@ -281,6 +290,7 @@ export default function MyProfileView() {
                   onChange={handleChange} disabled={!isEditing}
                   className="w-full border border-slate-200 rounded-lg py-1.5 px-2.5 text-[11px] md:text-xs bg-slate-50/50 text-charcoal-text disabled:opacity-60 disabled:bg-slate-100/50 disabled:cursor-not-allowed disabled:border-slate-100 focus:outline-none focus:ring-1 focus:ring-deep-maroon"
                 >
+                  <option value="">Select Gender</option>
                   <option value="Male">Male</option>
                   <option value="Female">Female</option>
                 </select>
@@ -316,6 +326,7 @@ export default function MyProfileView() {
                   onChange={handleChange} disabled={!isEditing}
                   className="w-full border border-slate-200 rounded-lg py-1.5 px-2.5 text-[11px] md:text-xs bg-slate-50/50 text-charcoal-text disabled:opacity-60 disabled:bg-slate-100/50 disabled:cursor-not-allowed disabled:border-slate-100 focus:outline-none focus:ring-1 focus:ring-deep-maroon"
                 >
+                  <option value="">Select Marital Status</option>
                   <option value="Never Married">Never Married</option>
                   <option value="Second Marriage">Second Marriage</option>
                 </select>
@@ -329,6 +340,7 @@ export default function MyProfileView() {
                   onChange={handleChange} disabled={!isEditing}
                   className="w-full border border-slate-200 rounded-lg py-1.5 px-2.5 text-[11px] md:text-xs bg-slate-50/50 text-charcoal-text disabled:opacity-60 disabled:bg-slate-100/50 disabled:cursor-not-allowed disabled:border-slate-100 focus:outline-none focus:ring-1 focus:ring-deep-maroon"
                 >
+                  <option value="">Select</option>
                   <option value="Myself">Myself</option>
                   <option value="Son">Son</option>
                   <option value="Daughter">Daughter</option>
@@ -480,8 +492,12 @@ export default function MyProfileView() {
                   <input type="text" placeholder="DD/MM/YYYY" name="dobEnglish" value={profileData.dobEnglish} onChange={handleChange} disabled={!isEditing} className="w-full border border-slate-200 rounded-lg py-1.5 px-2.5 text-[11px] md:text-xs bg-slate-50/50 text-charcoal-text disabled:opacity-60 disabled:bg-slate-100/50 disabled:cursor-not-allowed disabled:border-slate-100 focus:outline-none focus:ring-1 focus:ring-deep-maroon" />
                 </div>
                 <div className="col-span-1">
-                  <label className="block text-[9px] md:text-[10px] text-slate-400 font-semibold mb-0.5">Star / Rasi</label>
-                  <input type="text" name="starRasi" value={profileData.starRasi} onChange={handleChange} disabled={!isEditing} className="w-full border border-slate-200 rounded-lg py-1.5 px-2.5 text-[11px] md:text-xs bg-slate-50/50 text-charcoal-text focus:outline-none focus:ring-1 focus:ring-deep-maroon" />
+                  <label className="block text-[9px] md:text-[10px] text-slate-400 font-semibold mb-0.5">Star / Nakshatra</label>
+                  <input type="text" name="nakshatra" value={profileData.nakshatra} onChange={handleChange} disabled={!isEditing} className="w-full border border-slate-200 rounded-lg py-1.5 px-2.5 text-[11px] md:text-xs bg-slate-50/50 text-charcoal-text focus:outline-none focus:ring-1 focus:ring-deep-maroon" />
+                </div>
+                <div className="col-span-1">
+                  <label className="block text-[9px] md:text-[10px] text-slate-400 font-semibold mb-0.5">Rasi</label>
+                  <input type="text" name="rasi" value={profileData.rasi} onChange={handleChange} disabled={!isEditing} className="w-full border border-slate-200 rounded-lg py-1.5 px-2.5 text-[11px] md:text-xs bg-slate-50/50 text-charcoal-text focus:outline-none focus:ring-1 focus:ring-deep-maroon" />
                 </div>
               </div>
               <HoroscopeChartsProfile 

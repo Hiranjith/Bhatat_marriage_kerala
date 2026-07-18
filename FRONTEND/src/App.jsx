@@ -10,6 +10,8 @@ import Porutham from './pages/Porutham';
 import Muhurtham from './pages/Muhurtham';
 import Contact from './pages/contact';
 import Packages from './pages/Packages';
+import ForgotPassword from './pages/ForgotPassword';
+import PasswordSent from './pages/PasswordSent';
 
 function ScrollToTop() {
   const { pathname, hash } = useLocation();
@@ -88,6 +90,8 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/search" element={<Search />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/password-sent" element={<PasswordSent />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/profile/:profileId" element={<ProfileDetails />} />
         <Route path="/porutham" element={<Porutham />} />

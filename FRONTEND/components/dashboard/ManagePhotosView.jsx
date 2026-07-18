@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axiosInstance from '../../src/utils/axiosInstance';
 import { useAuth } from '../../src/context/AuthContext';
 
-export default function ManagePhotosView() {
+export default function ManagePhotosView({ onProfileUpdate }) {
   const { user, updateUser } = useAuth();
   const profileId = user?.profile_id;
   const [photos, setPhotos] = useState([
@@ -55,6 +55,7 @@ export default function ManagePhotosView() {
       if (slotId === 'photo_1' && updateUser) {
         updateUser({ ...user, photo_1: newPhotoUrl });
       }
+      if (onProfileUpdate) onProfileUpdate();
     } catch (error) {
       console.error("Failed to upload photo:", error);
     }
@@ -76,6 +77,7 @@ export default function ManagePhotosView() {
       if (slotId === 'photo_1' && updateUser) {
         updateUser({ ...user, photo_1: null });
       }
+      if (onProfileUpdate) onProfileUpdate();
     } catch (error) {
       console.error("Failed to delete photo:", error);
     }

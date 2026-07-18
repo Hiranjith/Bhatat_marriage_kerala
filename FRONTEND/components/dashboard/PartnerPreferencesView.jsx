@@ -2,20 +2,20 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../../src/context/AuthContext';
 
-export default function PartnerPreferencesView() {
+export default function PartnerPreferencesView({ onProfileUpdate }) {
   const { user } = useAuth();
   const [preferences, setPreferences] = useState({
-    ageMin: '22',
-    ageMax: '28',
-    heightMin: "5'0\"",
-    heightMax: "5'8\"",
-    maritalStatus: 'Never Married',
-    religion: 'Hindu',
-    caste: 'Reddy',
-    motherTongue: 'Telugu',
-    education: 'Any Graduate / Postgraduate',
-    profession: 'IT/Engineering, Medicine, Management',
-    location: 'India, USA, Canada',
+    ageMin: '',
+    ageMax: '',
+    heightMin: '',
+    heightMax: '',
+    maritalStatus: '',
+    religion: '',
+    caste: '',
+    motherTongue: '',
+    education: '',
+    profession: '',
+    location: '',
   });
 
   const [isSaved, setIsSaved] = useState(false);
@@ -34,7 +34,7 @@ export default function PartnerPreferencesView() {
               ageMax: data.max_age || '',
               heightMin: data.min_height || '',
               heightMax: data.max_height || '',
-              maritalStatus: data.marital_status || 'Never Married',
+              maritalStatus: data.marital_status || '',
               religion: data.religion || '',
               caste: data.caste || '',
               motherTongue: data.mother_tongue || '',
@@ -77,6 +77,7 @@ export default function PartnerPreferencesView() {
         });
         setIsSaved(true);
         setIsEditing(false);
+        if (onProfileUpdate) onProfileUpdate();
         setTimeout(() => setIsSaved(false), 3000);
       } catch (error) {
         console.error("Failed to update partner preferences:", error);
@@ -183,6 +184,7 @@ export default function PartnerPreferencesView() {
                   onChange={handleChange} disabled={!isEditing}
                   className="w-full border border-slate-200 rounded-lg py-2 px-3 text-xs bg-slate-50/50 text-charcoal-text disabled:opacity-60 disabled:bg-slate-100/50 disabled:cursor-not-allowed disabled:border-slate-100 focus:outline-none focus:ring-1 focus:ring-deep-maroon"
                 >
+                  <option value="">Select Marital Status</option>
                   <option value="Never Married">Never Married</option>
                   <option value="Second Marriage">Second Marriage</option>
                 </select>

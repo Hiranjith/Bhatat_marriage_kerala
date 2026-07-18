@@ -10,6 +10,7 @@ import SettingsView from '../../../components/dashboard/SettingsView';
 import MyPlanView from '../../../components/dashboard/MyPlanView';
 import { Helmet } from 'react-helmet-async';
 import { useAuth } from '../../context/AuthContext';
+import axiosInstance from '../../utils/axiosInstance';
 
 const menuItems = [
   { icon: 'dashboard', label: 'My Home' },
@@ -61,6 +62,12 @@ export default function Dashboard() {
   };
 
   const [activeItem, setActiveItem] = useState(() => getTabFromParam(tabParam));
+  const [completionPercentage, setCompletionPercentage] = useState(0);
+  const [updateTrigger, setUpdateTrigger] = useState(0);
+
+  const handleProfileUpdate = () => {
+    setUpdateTrigger(prev => prev + 1);
+  };
 
   useEffect(() => {
     if (tabParam) {
@@ -68,16 +75,26 @@ export default function Dashboard() {
     }
   }, [tabParam]);
 
+  useEffect(() => {
+    if (user?.profile_id) {
+      axiosInstance.get(`/users/profile/${user.profile_id}/completion`)
+        .then(res => {
+          setCompletionPercentage(res.data.percentage);
+        })
+        .catch(err => console.error('Failed to fetch completion percentage', err));
+    }
+  }, [user?.profile_id, activeItem, updateTrigger]);
+
   const renderActiveContent = () => {
     switch (activeItem) {
       case 'My Home':
         return <MyHomeView />;
       case 'My Profile':
-        return <MyProfileView />;
+        return <MyProfileView onProfileUpdate={handleProfileUpdate} />;
       case 'Partner Preferences':
-        return <PartnerPreferencesView />;
+        return <PartnerPreferencesView onProfileUpdate={handleProfileUpdate} />;
       case 'Manage Photos':
-        return <ManagePhotosView />;
+        return <ManagePhotosView onProfileUpdate={handleProfileUpdate} />;
       case 'Inbox Messages':
         return <InboxView />;
       case 'Favourite':
@@ -150,7 +167,7 @@ export default function Dashboard() {
                       strokeWidth="6" 
                       fill="transparent" 
                       strokeDasharray="264" 
-                      strokeDashoffset="39" // representing 85%
+                      strokeDashoffset={264 - (completionPercentage / 100) * 264}
                       strokeLinecap="round"
                       stroke="currentColor"
                     />
@@ -167,7 +184,7 @@ export default function Dashboard() {
 
                   {/* Percentage Badge */}
                   <span className="absolute -bottom-1 bg-heritage-gold text-white text-[9px] font-bold py-0.5 px-2.5 rounded-full shadow border border-white">
-                    85%
+                    {completionPercentage}%
                   </span>
                 </div>
 

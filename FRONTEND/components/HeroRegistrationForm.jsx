@@ -3,7 +3,7 @@ import axiosInstance from '../src/utils/axiosInstance';
 
 export default function HeroRegistrationForm({ onClose } = {}) {
   const [fullName, setFullName] = useState('');
-  const [lookingFor, setLookingFor] = useState('Bride');
+  const [gender, setGender] = useState('Male');
   const [community, setCommunity] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
@@ -23,10 +23,6 @@ export default function HeroRegistrationForm({ onClose } = {}) {
       return;
     }
     
-    // Convert lookingFor to actual user's gender
-    // If lookingFor is 'Bride' (Female), user is 'Male'
-    // If lookingFor is 'Groom' (Male), user is 'Female'
-    const userGender = lookingFor === 'Bride' ? 'Male' : 'Female';
     const dobString = `${dobDay} ${dobMonth} ${dobYear}`;
     
     const payload = {
@@ -37,7 +33,7 @@ export default function HeroRegistrationForm({ onClose } = {}) {
       religion: community,
       district: district,
       dob: dobString,
-      gender: userGender
+      gender: gender
     };
 
     try {
@@ -236,20 +232,20 @@ export default function HeroRegistrationForm({ onClose } = {}) {
           </div>
         </div>
 
-        {/* Looking For: Male / Female toggle */}
+        {/* Gender: Male / Female toggle */}
         <div className="grid grid-cols-2 gap-2 sm:gap-2.5">
           <button
             type="button"
-            onClick={() => setLookingFor('Groom')}
+            onClick={() => setGender('Male')}
             className={`flex items-center justify-center gap-1 border rounded-lg py-1.5 px-1 text-[10px] cursor-pointer transition-all ${
-              lookingFor === 'Groom'
+              gender === 'Male'
                 ? 'border-deep-maroon text-deep-maroon bg-deep-maroon/5 font-semibold'
                 : 'border-surface-variant text-soft-gray bg-white hover:bg-slate-50'
             }`}
           >
             <span
               className="material-symbols-outlined text-[14px] leading-none"
-              style={{ fontVariationSettings: lookingFor === 'Groom' ? "'FILL' 1" : "'FILL' 0" }}
+              style={{ fontVariationSettings: gender === 'Male' ? "'FILL' 1" : "'FILL' 0" }}
             >
               account_circle
             </span>
@@ -257,16 +253,16 @@ export default function HeroRegistrationForm({ onClose } = {}) {
           </button>
           <button
             type="button"
-            onClick={() => setLookingFor('Bride')}
+            onClick={() => setGender('Female')}
             className={`flex items-center justify-center gap-1 border rounded-lg py-1.5 px-1 text-[10px] cursor-pointer transition-all ${
-              lookingFor === 'Bride'
+              gender === 'Female'
                 ? 'border-deep-maroon text-deep-maroon bg-deep-maroon/5 font-semibold'
                 : 'border-surface-variant text-soft-gray bg-white hover:bg-slate-50'
             }`}
           >
             <span
               className="material-symbols-outlined text-[14px] leading-none"
-              style={{ fontVariationSettings: lookingFor === 'Bride' ? "'FILL' 1" : "'FILL' 0" }}
+              style={{ fontVariationSettings: gender === 'Female' ? "'FILL' 1" : "'FILL' 0" }}
             >
               account_circle
             </span>
