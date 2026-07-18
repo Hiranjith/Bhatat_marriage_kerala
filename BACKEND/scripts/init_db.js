@@ -38,6 +38,10 @@ const initDB = async () => {
         dob DATE NOT NULL,
         gender ENUM('Male', 'Female', 'Other') NOT NULL,
         password VARCHAR(255) NOT NULL,
+        photo_1 VARCHAR(255) DEFAULT NULL,
+        photo_2 VARCHAR(255) DEFAULT NULL,
+        photo_3 VARCHAR(255) DEFAULT NULL,
+        photo_4 VARCHAR(255) DEFAULT NULL,
         refresh_token VARCHAR(255),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -195,6 +199,47 @@ const initDB = async () => {
     `;
     await promisePool.query(createOthersTableQuery);
     console.log('others table checked/created successfully.');
+
+    const createPartnerPreferenceQuery = `
+      CREATE TABLE IF NOT EXISTS partner_preference (
+        id bigint(20) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        profile_id varchar(20) NOT NULL,
+        min_age int(11) DEFAULT NULL,
+        max_age int(11) DEFAULT NULL,
+        min_height varchar(50) DEFAULT NULL,
+        max_height varchar(50) DEFAULT NULL,
+        marital_status enum('Never Married', 'Second Marriage') DEFAULT NULL,
+        mother_tongue varchar(100) DEFAULT NULL,
+        religion varchar(100) DEFAULT NULL,
+        caste varchar(100) DEFAULT NULL,
+        education_level varchar(255) DEFAULT NULL,
+        preferred_professions varchar(255) DEFAULT NULL,
+        location_preferences varchar(255) DEFAULT NULL,
+        created_at timestamp NULL DEFAULT current_timestamp(),
+        updated_at timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+        UNIQUE KEY unique_profile_id (profile_id),
+        CONSTRAINT fk_partner_preference_profile_id FOREIGN KEY (profile_id) REFERENCES user_registration (profile_id) ON DELETE CASCADE
+      );
+    `;
+    await promisePool.query(createPartnerPreferenceQuery);
+    console.log('partner_preference table checked/created successfully.');
+
+    const createPlanetaryPositionsQuery = `
+      CREATE TABLE IF NOT EXISTS planetary_positions (
+        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+        profile_id VARCHAR(20) NOT NULL,
+        chart_type ENUM('grahanila', 'navamsakam') NOT NULL,
+        planet_name ENUM('Lagna', 'Sun', 'Moon', 'Mars', 'Mercury', 'Jupiter', 'Venus', 'Saturn', 'Rahu', 'Ketu') NOT NULL,
+        house_number INT NOT NULL CHECK (house_number BETWEEN 1 AND 12),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (profile_id) REFERENCES user_registration(profile_id) ON DELETE CASCADE,
+        UNIQUE KEY unique_planet_per_chart (profile_id, chart_type, planet_name),
+        INDEX idx_matching_search (chart_type, planet_name, house_number)
+      );
+    `;
+    await promisePool.query(createPlanetaryPositionsQuery);
+    console.log('planetary_positions table checked/created successfully with search index.');
 
     console.log('Database initialization completed successfully.');
     process.exit(0);
