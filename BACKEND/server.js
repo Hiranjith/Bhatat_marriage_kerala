@@ -44,8 +44,8 @@ app.use('/api/', apiLimiter);
 
 // 4. Standard Middlewares
 app.use(cors({
-  origin: 'http://localhost:5173', // Adjust this to match frontend URL in production
-  credentials: true
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173', // Adjust this to match frontend URL in production
+  credentials: true,
 }));
 app.use(express.json()); // Built-in body parser
 app.use(cookieParser());

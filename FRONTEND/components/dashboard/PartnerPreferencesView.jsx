@@ -26,7 +26,7 @@ export default function PartnerPreferencesView({ onProfileUpdate }) {
     const fetchPreferences = async () => {
       if (user?.profile_id) {
         try {
-          const response = await axios.get(`http://localhost:5000/api/users/profile/${user.profile_id}/partner-preferences`);
+          const response = await axios.get(`${import.meta.env.VITE_API_URL}/users/profile/${user.profile_id}/partner-preferences`);
           const data = response.data.preferences;
           if (data) {
             setPreferences({
@@ -62,7 +62,7 @@ export default function PartnerPreferencesView({ onProfileUpdate }) {
     e.preventDefault();
     if (user?.profile_id) {
       try {
-        await axios.put(`http://localhost:5000/api/users/profile/${user.profile_id}/partner-preferences`, {
+        await axios.put(`${import.meta.env.VITE_API_URL}/users/profile/${user.profile_id}/partner-preferences`, {
           min_age: preferences.ageMin,
           max_age: preferences.ageMax,
           min_height: preferences.heightMin,

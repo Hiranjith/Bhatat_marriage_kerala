@@ -345,7 +345,8 @@ export const uploadUserPhoto = async (req, res) => {
     const oldUrl = existing.length > 0 ? existing[0][slot] : null;
 
     // 2. Generate the URL for the frontend to access
-    const photoUrl = `http://localhost:5000/uploads/${req.file.filename}`;
+    const baseUrl = process.env.BACKEND_URL || 'http://localhost:5000';
+    const photoUrl = `${baseUrl}/uploads/${req.file.filename}`;
 
     // 3. Update the database
     await pool.query(
