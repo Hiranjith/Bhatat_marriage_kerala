@@ -241,6 +241,25 @@ const initDB = async () => {
     await promisePool.query(createPlanetaryPositionsQuery);
     console.log('planetary_positions table checked/created successfully with search index.');
 
+    const createFranchiseTableQuery = `
+      CREATE TABLE IF NOT EXISTS BM_Franchise (
+        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+        franchise_id VARCHAR(20) UNIQUE NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        owner VARCHAR(255) NOT NULL,
+        location VARCHAR(255) NOT NULL,
+        mobile_number VARCHAR(20) NOT NULL,
+        email VARCHAR(255) NOT NULL,
+        pin_codes JSON NOT NULL,
+        status ENUM('active', 'inactive') DEFAULT 'active',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_franchise_id (franchise_id)
+      );
+    `;
+    await promisePool.query(createFranchiseTableQuery);
+    console.log('BM_Franchise table checked/created successfully.');
+
     console.log('Database initialization completed successfully.');
     process.exit(0);
   } catch (error) {

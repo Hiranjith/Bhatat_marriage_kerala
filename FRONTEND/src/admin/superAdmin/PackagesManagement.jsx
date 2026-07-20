@@ -1,0 +1,402 @@
+import React, { useState } from 'react';
+
+const ALL_AVAILABLE_FEATURES = [
+  "Profile Listing",
+  "Browse Profiles",
+  "View Photos & Horoscopes",
+  "Detailed Profile Info",
+  "Direct Chat & Messaging",
+  "View Contact Numbers",
+  "Download Horoscope",
+  "Premium Profile Badge",
+  "Video Calling"
+];
+
+const INITIAL_PACKAGES = [
+  {
+    id: "PKG-01",
+    name: "Standard Plan",
+    price: 0,
+    duration: "Unlimited",
+    status: "Active",
+    features: [
+      "Profile Listing",
+      "Browse Profiles"
+    ]
+  },
+  {
+    id: "PKG-02",
+    name: "Silver Plan",
+    price: 400,
+    duration: "1 Month",
+    status: "Active",
+    features: [
+      "Profile Listing",
+      "Browse Profiles",
+      "View Photos & Horoscopes"
+    ]
+  },
+  {
+    id: "PKG-03",
+    name: "Gold Plan",
+    price: 600,
+    duration: "1 Month",
+    status: "Active",
+    features: [
+      "Profile Listing",
+      "Browse Profiles",
+      "View Photos & Horoscopes",
+      "Detailed Profile Info",
+      "Direct Chat & Messaging"
+    ]
+  },
+  {
+    id: "PKG-04",
+    name: "Platinum Plan",
+    price: 800,
+    duration: "1 Month",
+    status: "Active",
+    features: [
+      "Profile Listing",
+      "Browse Profiles",
+      "View Photos & Horoscopes",
+      "Detailed Profile Info",
+      "Direct Chat & Messaging",
+      "View Contact Numbers",
+      "Download Horoscope"
+    ]
+  },
+  {
+    id: "PKG-05",
+    name: "Diamond Plan",
+    price: 1000,
+    duration: "1 Month",
+    status: "Active",
+    features: [
+      "Profile Listing",
+      "Browse Profiles",
+      "View Photos & Horoscopes",
+      "Detailed Profile Info",
+      "Direct Chat & Messaging",
+      "View Contact Numbers",
+      "Download Horoscope",
+      "Premium Profile Badge",
+      "Video Calling"
+    ]
+  }
+];
+
+export default function PackagesManagement() {
+  const [packages, setPackages] = useState(INITIAL_PACKAGES);
+  const [selectedPackage, setSelectedPackage] = useState(null); // For edit modal
+  const [editingFields, setEditingFields] = useState({
+    name: '',
+    price: 0,
+    duration: '',
+    status: '',
+    features: []
+  });
+  const [selectedFeatureToAdd, setSelectedFeatureToAdd] = useState('');
+
+  const handleOpenEdit = (pkg) => {
+    setSelectedPackage(pkg);
+    setEditingFields({
+      name: pkg.name,
+      price: pkg.price,
+      duration: pkg.duration,
+      status: pkg.status,
+      features: [...pkg.features]
+    });
+    // Find initial feature to select from dropdown
+    const remaining = ALL_AVAILABLE_FEATURES.filter(f => !pkg.features.includes(f));
+    setSelectedFeatureToAdd(remaining[0] || '');
+  };
+
+  const handleUpdateField = (field, value) => {
+    setEditingFields(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleAddFeature = () => {
+    if (!selectedFeatureToAdd) return;
+    const nextFeatures = [...editingFields.features, selectedFeatureToAdd];
+    setEditingFields(prev => ({
+      ...prev,
+      features: nextFeatures
+    }));
+    
+    // Set next available feature as selected
+    const remaining = ALL_AVAILABLE_FEATURES.filter(f => !nextFeatures.includes(f));
+    setSelectedFeatureToAdd(remaining[0] || '');
+  };
+
+  const handleRemoveFeature = (index) => {
+    const removedFeature = editingFields.features[index];
+    const nextFeatures = editingFields.features.filter((_, idx) => idx !== index);
+    
+    setEditingFields(prev => ({
+      ...prev,
+      features: nextFeatures
+    }));
+
+    // Default dropdown selection to the removed one if nothing was selectable
+    if (!selectedFeatureToAdd) {
+      setSelectedFeatureToAdd(removedFeature);
+    }
+  };
+
+  const handleSavePackage = () => {
+    if (!editingFields.name.trim() || editingFields.price < 0) {
+      alert("Please enter a valid package name and price.");
+      return;
+    }
+    setPackages(prev => prev.map(p => p.id === selectedPackage.id ? { ...p, ...editingFields } : p));
+    setSelectedPackage(null);
+  };
+
+  // Features not yet added to editing package
+  const remainingFeatures = ALL_AVAILABLE_FEATURES.filter(
+    f => !editingFields.features.includes(f)
+  );
+
+  return (
+    <div className="space-y-6 text-left">
+      {/* Header section */}
+      <div>
+        <h2 className="text-lg sm:text-xl font-bold text-slate-800 flex items-center gap-2">
+          <span className="w-1.5 h-1.5 rounded-full bg-deep-maroon"></span>
+          Packages & Pricing
+        </h2>
+        <p className="text-xs text-slate-500 mt-1">
+          Configure subscription tier rates, durations, and manage functional features for candidates.
+        </p>
+      </div>
+
+      {/* Package cards grid */}
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {packages.map((pkg) => (
+          <div 
+            key={pkg.id} 
+            className="bg-white rounded-2xl border border-slate-200/60 shadow-xs flex flex-col justify-between overflow-hidden relative"
+          >
+            {/* Package Header Accent color by price */}
+            <div className={`h-1.5 ${
+              pkg.price >= 1000 
+                ? 'bg-heritage-gold' 
+                : pkg.price >= 600
+                ? 'bg-deep-maroon'
+                : pkg.price >= 400
+                ? 'bg-rose-400'
+                : 'bg-slate-300'
+            }`}></div>
+
+            <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
+              {/* Plan Metadata */}
+              <div className="flex items-start justify-between">
+                <div>
+                  <h3 className="font-bold text-slate-800 text-sm sm:text-base">{pkg.name}</h3>
+                  <p className="text-[10px] text-slate-450 font-bold uppercase tracking-wider mt-0.5">{pkg.id}</p>
+                </div>
+                <div className="flex flex-col items-end">
+                  <span className={`px-2 py-0.5 rounded-full text-[8px] font-extrabold uppercase border ${
+                    pkg.status === 'Active'
+                      ? 'bg-emerald-50 border-emerald-100 text-emerald-700'
+                      : 'bg-rose-50 border-rose-100 text-rose-700'
+                  }`}>
+                    {pkg.status}
+                  </span>
+                  <span className="text-[10px] text-slate-400 mt-1 font-semibold">Valid: {pkg.duration}</span>
+                </div>
+              </div>
+
+              {/* Price Details */}
+              <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100 flex items-baseline gap-1.5">
+                <span className="text-2xl font-black text-slate-800">
+                  {pkg.price === 0 ? "Free" : `₹${pkg.price}`}
+                </span>
+                {pkg.price > 0 && <span className="text-[10px] text-slate-455 font-bold">/ {pkg.duration}</span>}
+              </div>
+
+              {/* Features List */}
+              <div className="space-y-2 flex-1">
+                <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-450">Included Features:</h4>
+                <ul className="space-y-1.5 text-xs text-slate-655 font-semibold">
+                  {pkg.features.map((feature, index) => (
+                    <li key={index} className="flex items-start gap-2">
+                      <span className="material-symbols-outlined text-emerald-500 text-sm leading-none shrink-0 pt-0.5">
+                        check_circle
+                      </span>
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Action Button */}
+              <div className="pt-2 border-t border-slate-100 flex justify-end">
+                <button
+                  onClick={() => handleOpenEdit(pkg)}
+                  className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-200/50 rounded-xl text-xs font-bold text-charcoal-text cursor-pointer flex items-center gap-1 transition-all active:scale-95"
+                >
+                  <span className="material-symbols-outlined text-xs">edit</span>
+                  Edit Plan
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Edit plan modal */}
+      {selectedPackage && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div 
+            onClick={() => setSelectedPackage(null)}
+            className="absolute inset-0 bg-black/45 backdrop-blur-xs transition-opacity"
+          ></div>
+
+          {/* Modal Container */}
+          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl relative z-10 overflow-hidden border border-slate-200 flex flex-col justify-between animate-scale-up max-h-[90vh]">
+            
+            {/* Header */}
+            <div className="p-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-slate-800 text-sm">Edit subscription details</h3>
+                <p className="text-[10px] text-slate-455 mt-0.5">Editing {selectedPackage.id}</p>
+              </div>
+              <button 
+                onClick={() => setSelectedPackage(null)}
+                className="text-slate-400 hover:text-slate-655 cursor-pointer flex items-center"
+              >
+                <span className="material-symbols-outlined text-lg">close</span>
+              </button>
+            </div>
+
+            {/* Form Content */}
+            <div className="p-6 overflow-y-auto space-y-4 text-xs font-semibold text-slate-700 flex-1">
+              
+              {/* Name & Pricing Row */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] uppercase text-slate-450 font-bold">Package Name</label>
+                  <input
+                    type="text"
+                    value={editingFields.name}
+                    onChange={(e) => handleUpdateField('name', e.target.value)}
+                    className="w-full border border-slate-200 rounded-lg p-2 font-medium bg-slate-50/50 focus:outline-none focus:ring-1 focus:ring-deep-maroon focus:bg-white"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] uppercase text-slate-450 font-bold">Pricing (₹)</label>
+                  <input
+                    type="number"
+                    value={editingFields.price}
+                    onChange={(e) => handleUpdateField('price', parseInt(e.target.value) || 0)}
+                    className="w-full border border-slate-200 rounded-lg p-2 font-medium bg-slate-50/50 focus:outline-none focus:ring-1 focus:ring-deep-maroon focus:bg-white"
+                  />
+                </div>
+              </div>
+
+              {/* Duration & Status Row */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] uppercase text-slate-455 font-bold">Plan Duration</label>
+                  <input
+                    type="text"
+                    value={editingFields.duration}
+                    onChange={(e) => handleUpdateField('duration', e.target.value)}
+                    className="w-full border border-slate-200 rounded-lg p-2 font-medium bg-slate-50/50 focus:outline-none focus:ring-1 focus:ring-deep-maroon focus:bg-white"
+                    placeholder="e.g. 1 Month, Unlimited"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] uppercase text-slate-455 font-bold">Plan Status</label>
+                  <select
+                    value={editingFields.status}
+                    onChange={(e) => handleUpdateField('status', e.target.value)}
+                    className="w-full border border-slate-200 rounded-lg p-2 font-medium bg-white focus:outline-none focus:ring-1 focus:ring-deep-maroon"
+                  >
+                    <option value="Active">Active</option>
+                    <option value="Inactive">Inactive</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Features List Section */}
+              <div className="space-y-3 pt-3 border-t border-slate-150/60">
+                <label className="text-[10px] uppercase text-slate-455 font-bold block">Plan Features</label>
+                
+                {/* Feature Add Dropdown Selection */}
+                <div className="flex gap-2">
+                  <select
+                    value={selectedFeatureToAdd}
+                    onChange={(e) => setSelectedFeatureToAdd(e.target.value)}
+                    className="flex-1 border border-slate-200 rounded-lg px-2.5 py-1.5 font-medium bg-white focus:outline-none focus:ring-1 focus:ring-deep-maroon"
+                    disabled={remainingFeatures.length === 0}
+                  >
+                    {remainingFeatures.length === 0 ? (
+                      <option value="">All available features added</option>
+                    ) : (
+                      remainingFeatures.map((feature, index) => (
+                        <option key={index} value={feature}>{feature}</option>
+                      ))
+                    )}
+                  </select>
+                  <button
+                    onClick={handleAddFeature}
+                    disabled={!selectedFeatureToAdd}
+                    className="px-3.5 py-1.5 bg-deep-maroon hover:bg-primary text-white rounded-lg font-bold cursor-pointer transition-colors disabled:opacity-40"
+                  >
+                    Add
+                  </button>
+                </div>
+
+                {/* Features List items */}
+                <div className="border border-slate-200 rounded-xl divide-y divide-slate-100 overflow-hidden bg-slate-50/20 max-h-[180px] overflow-y-auto">
+                  {editingFields.features.length === 0 ? (
+                    <p className="p-4 text-center text-slate-400 font-semibold italic">No features registered in this tier.</p>
+                  ) : (
+                    editingFields.features.map((feature, idx) => (
+                      <div key={idx} className="p-2.5 flex items-center justify-between gap-3 bg-white font-medium">
+                        <span className="text-slate-650 truncate">{feature}</span>
+                        <button
+                          onClick={() => handleRemoveFeature(idx)}
+                          className="text-rose-600 hover:text-rose-800 cursor-pointer flex items-center p-0.5"
+                        >
+                          <span className="material-symbols-outlined text-base">delete</span>
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+            </div>
+
+            {/* Footer buttons */}
+            <div className="p-4 border-t border-slate-200 bg-slate-50 flex justify-end gap-2 shrink-0">
+              <button
+                onClick={() => setSelectedPackage(null)}
+                className="px-3.5 py-1.5 border border-slate-200 text-slate-650 hover:bg-slate-100 bg-white rounded-lg font-bold cursor-pointer transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSavePackage}
+                className="px-4 py-1.5 bg-deep-maroon hover:bg-primary text-white rounded-lg font-bold cursor-pointer shadow-md transition-all active:scale-95 flex items-center gap-1"
+              >
+                <span className="material-symbols-outlined text-xs">save</span>
+                Save Plan
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+}

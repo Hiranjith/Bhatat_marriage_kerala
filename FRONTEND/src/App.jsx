@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import UserLayout from '../layouts/userlayout';
 import Home from './pages/Home';
 import Search from './pages/Search';
@@ -12,6 +12,12 @@ import Contact from './pages/contact';
 import Packages from './pages/Packages';
 import ForgotPassword from './pages/ForgotPassword';
 import PasswordSent from './pages/PasswordSent';
+
+// Admin / Super Admin Page Imports
+import SuperAdminLogin from './admin/superAdmin/Login';
+import SuperAdminDashboard from './admin/superAdmin/DashBoard';
+import AdminLogin from './admin/admin/Login';
+import AdminDashboard from './admin/admin/Dashbord';
 
 function ScrollToTop() {
   const { pathname, hash } = useLocation();
@@ -31,7 +37,20 @@ function ScrollToTop() {
   return null;
 }
 
+function SuperAdminProtectedRoute({ children }) {
+  const isAdminLoggedIn = localStorage.getItem('isAdminLoggedIn') === 'true';
+  const adminRole = localStorage.getItem('adminRole');
+  
+  if (!isAdminLoggedIn || adminRole !== 'superadmin') {
+    return <Navigate to="/super-admin/login" replace />;
+  }
+  return children;
+}
+
 function App() {
+  const location = useLocation();
+  const isAdminPath = location.pathname.startsWith('/super-admin') || location.pathname.startsWith('/admin');
+
   useEffect(() => {
     // Prevent right-click context menu
     const handleContextMenu = (e) => {
@@ -83,10 +102,11 @@ function App() {
     };
   }, []);
 
-  return (
-    <UserLayout>
+  const routeContent = (
+    <>
       <ScrollToTop />
       <Routes>
+        {/* Public / User Routes */}
         <Route path="/" element={<Home />} />
         <Route path="/search" element={<Search />} />
         <Route path="/login" element={<Login />} />
@@ -97,11 +117,35 @@ function App() {
         <Route path="/porutham" element={<Porutham />} />
         <Route path="/muhurtham" element={<Muhurtham />} />
         <Route path='/contact-us' element={<Contact/>}/>
-        <Route path='packages' element={<Packages/>}/>
+        <Route path='/packages' element={<Packages/>}/>
+
+        {/* Super Admin Routes */}
+        <Route path="/super-admin/login" element={<SuperAdminLogin />} />
+        <Route 
+          path="/super-admin/dashboard" 
+          element={
+            <SuperAdminProtectedRoute>
+              <SuperAdminDashboard />
+            </SuperAdminProtectedRoute>
+          } 
+        />
+
+        {/* Standard Admin Routes */}
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
       </Routes>
+    </>
+  );
+
+  if (isAdminPath) {
+    return routeContent;
+  }
+
+  return (
+    <UserLayout>
+      {routeContent}
     </UserLayout>
   );
 }
 
 export default App;
-
