@@ -604,33 +604,31 @@ export default function FranchiseManagement() {
         </div>
       )}
 
-      {/* Shadcn-style Delete Confirmation Modal */}
+      {/* Confirm Dialog (Staff Management Design) */}
       {franchiseToDelete && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center px-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
           <div
             onClick={() => setFranchiseToDelete(null)}
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+            className="absolute inset-0 bg-black/40 backdrop-blur-xs transition-opacity"
           ></div>
-          <div className="bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden w-full max-w-md relative z-10 animate-fade-in text-left">
-            <div className="p-6">
-              <h3 className="text-lg font-bold text-slate-800 mb-2">Are you absolutely sure?</h3>
-              <p className="text-sm text-slate-500 mb-6">
-                This action cannot be undone. This will permanently delete the franchise and remove its data from our servers.
-              </p>
-              <div className="flex justify-end gap-3">
-                <button
-                  onClick={() => setFranchiseToDelete(null)}
-                  className="px-4 py-2 border border-slate-200 hover:bg-slate-100 text-slate-700 font-bold rounded-lg text-sm transition-colors cursor-pointer select-none"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={confirmDeleteFranchise}
-                  className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-lg text-sm transition-colors cursor-pointer select-none shadow-sm"
-                >
-                  Continue
-                </button>
-              </div>
+          <div className="bg-paper-white rounded-2xl shadow-xl border border-surface-variant/40 w-full max-w-sm relative z-10 p-6 animate-fade-in text-center">
+            <h3 className="text-lg font-bold text-slate-800 mb-2">Remove Franchise</h3>
+            <p className="text-sm text-slate-500 mb-6">
+              Are you sure you want to remove this franchise? This action cannot be undone.
+            </p>
+            <div className="flex justify-center gap-3">
+              <button
+                onClick={() => setFranchiseToDelete(null)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-charcoal-text font-bold rounded-xl text-xs cursor-pointer select-none"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteFranchise}
+                className="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white font-bold rounded-xl text-xs cursor-pointer select-none"
+              >
+                Confirm
+              </button>
             </div>
           </div>
         </div>

@@ -1,65 +1,82 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axiosInstance from '../../utils/axiosInstance';
 
-// Same franchise source used in FranchiseManagement / HeadFranchise.
-// In production this should come from shared/lifted state or an API call
-// so the list always matches actual registered franchises.
-const FRANCHISE_OPTIONS = [
-  { id: 'HEAD_OFFICE', name: 'Head Office' },
-  { id: 'FRN0001', name: 'BM-Kochi' },
-  { id: 'FRN0002', name: 'BM-Kollam' }
-];
-
-const getFranchiseName = (id) => {
-  const match = FRANCHISE_OPTIONS.find(f => f.id === id);
-  return match ? match.name : id;
+const formatFranchiseName = (name) => {
+  if (!name || name === 'Head Office') return name;
+  const parts = name.split(/[\s,]+/);
+  const lastPart = parts[parts.length - 1] || name;
+  return `BM-${lastPart}`;
 };
 
-const INITIAL_STAFF = [
-  {
-    id: 'STF0001',
-    name: 'Shanu V. R.',
-    role: 'User Management Staff',
-    email: 'shanu@bharathmarriage.com',
-    phone: '+91 9876543210',
-    status: 'Active',
-    lastLogin: '10 mins ago',
-    franchiseId: 'FRN0001'
-  },
-  {
-    id: 'STF0002',
-    name: 'Anjali Krishna',
-    role: 'Finance & Package Staff',
-    email: 'anjali@bharathmarriage.com',
-    phone: '+91 8765432109',
-    status: 'Active',
-    lastLogin: '2 hours ago',
-    franchiseId: 'FRN0002'
-  }
-];
-
 export default function StaffManagment() {
-  const [staffList, setStaffList] = useState(INITIAL_STAFF);
+  const [staffList, setStaffList] = useState([]);
+  const [franchiseOptions, setFranchiseOptions] = useState([{ id: 'HEAD_OFFICE', name: 'Head Office' }]);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      const [staffRes, franchiseRes] = await Promise.all([
+        axiosInstance.get('/admin/staff'),
+        axiosInstance.get('/admin/franchises')
+      ]);
+      
+      const mappedStaff = staffRes.data.map(s => ({
+        id: s.staff_id,
+        name: s.name,
+        role: s.role,
+        email: s.email,
+        phone: s.phone_number,
+        status: s.account_status,
+        lastLogin: 'Never',
+        franchiseId: s.franchise || 'HEAD_OFFICE'
+      }));
+      setStaffList(mappedStaff);
+
+      const mappedFranchises = [
+        { id: 'HEAD_OFFICE', name: 'Head Office' },
+        ...franchiseRes.data.map(f => ({
+          id: f.franchise_id,
+          name: formatFranchiseName(f.name)
+        }))
+      ];
+      setFranchiseOptions(mappedFranchises);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
+  };
+
+  const getFranchiseName = (id) => {
+    const match = franchiseOptions.find(f => f.id === id);
+    return match ? match.name : id;
+  };
   const [showModal, setShowModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editingStaffId, setEditingStaffId] = useState(null);
   const [franchiseFilter, setFranchiseFilter] = useState('All');
 
+  // Custom Dialog States
+  const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, title: '', message: '', onConfirm: null });
+  const [alertDialog, setAlertDialog] = useState({ isOpen: false, title: '', message: '' });
+
   // Form States
   const [name, setName] = useState('');
-  const [role, setRole] = useState('User Management Staff');
+  const [role, setRole] = useState('USER MANAGEMENT');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [status, setStatus] = useState('Active');
+  const [status, setStatus] = useState('active');
   const [franchiseId, setFranchiseId] = useState('HEAD_OFFICE');
 
   const handleOpenAddModal = () => {
     setIsEditing(false);
     setEditingStaffId(null);
     setName('');
-    setRole('User Management Staff');
+    setRole('USER MANAGEMENT');
     setEmail('');
     setPhone('');
-    setStatus('Active');
+    setStatus('active');
     setFranchiseId('HEAD_OFFICE');
     setShowModal(true);
   };
@@ -77,52 +94,59 @@ export default function StaffManagment() {
   };
 
   const handleDeleteStaff = (id) => {
-    if (window.confirm('Are you sure you want to remove this staff member?')) {
-      setStaffList(prev => prev.filter(item => item.id !== id));
-    }
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Remove Staff Member',
+      message: 'Are you sure you want to remove this staff member? This action cannot be undone.',
+      onConfirm: async () => {
+        try {
+          await axiosInstance.delete(`/admin/staff/${id}`);
+          fetchData();
+        } catch (error) {
+          console.error('Error deleting staff:', error);
+          setAlertDialog({
+            isOpen: true,
+            title: 'Error',
+            message: 'Failed to delete staff member'
+          });
+        }
+        setConfirmDialog({ isOpen: false, title: '', message: '', onConfirm: null });
+      }
+    });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (isEditing) {
-      // Update
-      setStaffList(prev => prev.map(item => {
-        if (item.id === editingStaffId) {
-          return {
-            ...item,
-            name,
-            role,
-            email,
-            phone,
-            status,
-            franchiseId
-          };
-        }
-        return item;
-      }));
-    } else {
-      // Add new
-      const nextIdNum = staffList.length > 0
-        ? Math.max(...staffList.map(s => parseInt(s.id.replace('STF', '')))) + 1
-        : 1;
-      const formattedId = `STF${String(nextIdNum).padStart(4, '0')}`;
-
-      const newStaff = {
-        id: formattedId,
-        name,
-        role,
-        email,
-        phone,
-        status,
-        franchiseId,
-        lastLogin: 'Never'
-      };
-
-      setStaffList(prev => [...prev, newStaff]);
+    try {
+      if (isEditing) {
+        await axiosInstance.put(`/admin/staff/${editingStaffId}`, {
+          name,
+          role,
+          email,
+          phone_number: phone,
+          account_status: status,
+          franchise: franchiseId
+        });
+      } else {
+        await axiosInstance.post('/admin/staff', {
+          name,
+          role,
+          email,
+          phone_number: phone,
+          account_status: status,
+          franchise: franchiseId
+        });
+      }
+      setShowModal(false);
+      fetchData();
+    } catch (error) {
+      console.error('Error saving staff:', error);
+      setAlertDialog({
+        isOpen: true,
+        title: 'Error',
+        message: 'Failed to save staff member'
+      });
     }
-
-    setShowModal(false);
   };
 
   const filteredStaff = staffList.filter(staff =>
@@ -160,7 +184,7 @@ export default function StaffManagment() {
           className="border border-surface-variant rounded-lg py-1 px-2 bg-white text-slate-700 focus:ring-1 focus:ring-deep-maroon focus:outline-none w-[180px] text-[11px]"
         >
           <option value="All">All Franchises</option>
-          {FRANCHISE_OPTIONS.map((f) => (
+          {franchiseOptions.map((f) => (
             <option key={f.id} value={f.id}>{f.name}</option>
           ))}
         </select>
@@ -205,11 +229,11 @@ export default function StaffManagment() {
                     </td>
                     <td className="py-3 px-2.5">
                       <span className={`inline-block px-2.5 py-0.5 rounded-full text-[9px] font-bold tracking-wide uppercase border max-w-[150px] truncate align-middle ${
-                        staff.role === 'User Management Staff'
+                        staff.role === 'USER MANAGEMENT'
                           ? 'bg-purple-50 border-purple-100 text-purple-700'
                           : 'bg-amber-50 border-amber-100 text-amber-700'
                       }`} title={staff.role}>
-                        {staff.role}
+                        {staff.role === 'USER MANAGEMENT' ? 'User Management Staff' : 'Finance & Package Staff'}
                       </span>
                     </td>
                     <td className="py-3 px-2.5">
@@ -235,12 +259,12 @@ export default function StaffManagment() {
                     <td className="py-3 px-2.5 text-slate-500 whitespace-nowrap">{staff.phone}</td>
                     <td className="py-3 px-2.5">
                       <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase border whitespace-nowrap ${
-                        staff.status === 'Active'
+                        staff.status === 'active'
                           ? 'bg-emerald-50 border-emerald-100 text-emerald-700'
                           : 'bg-slate-100 border-slate-200 text-slate-450'
                       }`}>
-                        <span className={`w-1 h-1 rounded-full ${staff.status === 'Active' ? 'bg-emerald-500' : 'bg-slate-400'}`}></span>
-                        {staff.status}
+                        <span className={`w-1 h-1 rounded-full ${staff.status === 'active' ? 'bg-emerald-500' : 'bg-slate-400'}`}></span>
+                        {staff.status === 'active' ? 'Active' : 'Inactive'}
                       </span>
                     </td>
                     <td className="py-3 px-2.5 text-slate-400 whitespace-nowrap">{staff.lastLogin}</td>
@@ -317,8 +341,8 @@ export default function StaffManagment() {
                   onChange={(e) => setRole(e.target.value)}
                   className="w-full border border-surface-variant rounded-xl py-2 px-3 text-xs bg-white text-charcoal-text focus:outline-none focus:ring-1 focus:ring-deep-maroon focus:border-deep-maroon"
                 >
-                  <option value="User Management Staff">User Management Staff</option>
-                  <option value="Finance & Package Staff">Finance & Package Staff</option>
+                  <option value="USER MANAGEMENT">User Management Staff</option>
+                  <option value="FINANCE & PACKAGE">Finance & Package Staff</option>
                 </select>
               </div>
 
@@ -331,7 +355,7 @@ export default function StaffManagment() {
                   onChange={(e) => setFranchiseId(e.target.value)}
                   className="w-full border border-surface-variant rounded-xl py-2 px-3 text-xs bg-white text-charcoal-text focus:outline-none focus:ring-1 focus:ring-deep-maroon focus:border-deep-maroon"
                 >
-                  {FRANCHISE_OPTIONS.map((f) => (
+                  {franchiseOptions.map((f) => (
                     <option key={f.id} value={f.id}>{f.name}</option>
                   ))}
                 </select>
@@ -377,9 +401,9 @@ export default function StaffManagment() {
                     <input
                       type="radio"
                       name="status"
-                      value="Active"
-                      checked={status === 'Active'}
-                      onChange={() => setStatus('Active')}
+                      value="active"
+                      checked={status === 'active'}
+                      onChange={() => setStatus('active')}
                       className="accent-deep-maroon cursor-pointer"
                     />
                     <span>Active</span>
@@ -388,9 +412,9 @@ export default function StaffManagment() {
                     <input
                       type="radio"
                       name="status"
-                      value="Inactive"
-                      checked={status === 'Inactive'}
-                      onChange={() => setStatus('Inactive')}
+                      value="inactive"
+                      checked={status === 'inactive'}
+                      onChange={() => setStatus('inactive')}
                       className="accent-deep-maroon cursor-pointer"
                     />
                     <span>Inactive</span>
@@ -414,6 +438,48 @@ export default function StaffManagment() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Dialog */}
+      {confirmDialog.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          <div onClick={() => setConfirmDialog({ ...confirmDialog, isOpen: false })} className="absolute inset-0 bg-black/40 backdrop-blur-xs transition-opacity"></div>
+          <div className="bg-paper-white rounded-2xl shadow-xl border border-surface-variant/40 w-full max-w-sm relative z-10 p-6 animate-fade-in text-center">
+            <h3 className="text-lg font-bold text-slate-800 mb-2">{confirmDialog.title}</h3>
+            <p className="text-sm text-slate-500 mb-6">{confirmDialog.message}</p>
+            <div className="flex justify-center gap-3">
+              <button
+                onClick={() => setConfirmDialog({ ...confirmDialog, isOpen: false })}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-charcoal-text font-bold rounded-xl text-xs cursor-pointer select-none"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDialog.onConfirm}
+                className="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white font-bold rounded-xl text-xs cursor-pointer select-none"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Alert Dialog */}
+      {alertDialog.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          <div onClick={() => setAlertDialog({ ...alertDialog, isOpen: false })} className="absolute inset-0 bg-black/40 backdrop-blur-xs transition-opacity"></div>
+          <div className="bg-paper-white rounded-2xl shadow-xl border border-surface-variant/40 w-full max-w-sm relative z-10 p-6 animate-fade-in text-center">
+            <h3 className="text-lg font-bold text-slate-800 mb-2">{alertDialog.title}</h3>
+            <p className="text-sm text-slate-500 mb-6">{alertDialog.message}</p>
+            <button
+              onClick={() => setAlertDialog({ ...alertDialog, isOpen: false })}
+              className="px-4 py-2 bg-deep-maroon hover:bg-primary text-white font-bold rounded-xl text-xs cursor-pointer select-none w-full"
+            >
+              Okay
+            </button>
           </div>
         </div>
       )}

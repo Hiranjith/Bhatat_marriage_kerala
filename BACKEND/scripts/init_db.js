@@ -260,6 +260,24 @@ const initDB = async () => {
     await promisePool.query(createFranchiseTableQuery);
     console.log('BM_Franchise table checked/created successfully.');
 
+    const createStaffTableQuery = `
+      CREATE TABLE IF NOT EXISTS BM_Staff_data (
+        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+        staff_id VARCHAR(20) UNIQUE NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        role ENUM('USER MANAGEMENT', 'FINANCE & PACKAGE') NOT NULL,
+        franchise VARCHAR(255),
+        email VARCHAR(255),
+        phone_number VARCHAR(20),
+        account_status ENUM('active', 'inactive') DEFAULT 'active',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_staff_id (staff_id)
+      );
+    `;
+    await promisePool.query(createStaffTableQuery);
+    console.log('BM_Staff_data table checked/created successfully.');
+
     console.log('Database initialization completed successfully.');
     process.exit(0);
   } catch (error) {
