@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 
 // Create Context
 const AuthContext = createContext();
@@ -9,16 +10,45 @@ export const AuthProvider = ({ children }) => {
   // This saves us from making expensive Axios calls in other components.
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const location = useLocation();
 
   // You can optionally load the user from local storage or an API on initial mount
   useEffect(() => {
-    // Example: Check if there's saved user data in localStorage
     const savedUser = localStorage.getItem('user');
-    if (savedUser) {
+    const token = localStorage.getItem('accessToken');
+    
+    if (savedUser && token) {
       setUser(JSON.parse(savedUser));
+      
+      // Verify session with backend immediately on mount/navigation
+      verifySession();
+      
+      // Set up polling to check session status every 10 seconds (detect forced logouts)
+      const intervalId = setInterval(verifySession, 10000);
+      
+      return () => clearInterval(intervalId);
+    } else {
+      setLoading(false);
     }
-    setLoading(false);
-  }, []);
+  }, [location.pathname]);
+
+  // Make a quick call to /api/auth/me. 
+  // If forced logged out, the interceptor catches the 401 and clears local storage.
+  const verifySession = async () => {
+    try {
+      // We must dynamically import to avoid circular dependencies if any, 
+      // or just rely on the global axiosInstance if imported at top.
+      const { default: axiosInstance } = await import('../utils/axiosInstance');
+      await axiosInstance.get('/auth/me');
+    } catch (error) {
+      // 401 error is handled by axiosInstance interceptor which kicks the user out
+      if (error.response && error.response.status === 401) {
+        setUser(null);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Update both state and localStorage when user logs in/out
   const login = (userData) => {

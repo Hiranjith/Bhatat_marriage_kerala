@@ -269,6 +269,12 @@ export const refreshToken = async (req, res) => {
   }
 };
 
+export const getMe = async (req, res) => {
+  // If the request reaches here, it means verifyUserSession middleware passed
+  // So the user has a valid access token and a valid refresh token in DB.
+  res.status(200).json({ valid: true, user: req.user });
+};
+
 export const logout = async (req, res) => {
   const token = req.cookies.refreshToken;
 

@@ -30,8 +30,14 @@ export default function Navbar() {
   }, []);
 
   useEffect(() => {
-    setIsLoggedIn(localStorage.getItem('isLoggedIn') === 'true');
-  }, [location]);
+    // If the user object from AuthContext is null, they are definitely logged out.
+    // Otherwise fallback to checking local storage (for initial render sync).
+    if (user) {
+      setIsLoggedIn(true);
+    } else {
+      setIsLoggedIn(localStorage.getItem('isLoggedIn') === 'true');
+    }
+  }, [location, user]);
 
   const handleLogout = () => {
     localStorage.removeItem('isLoggedIn');

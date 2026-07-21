@@ -2,6 +2,8 @@ import express from 'express';
 import franchiseRoutes from './admin/franchiseRoutes.js';
 import dashboardRoutes from './admin/dashboardRoutes.js';
 import staffRoutes from './admin/staffRoutes.js';
+import customerRoutes from './admin/customerRoutes.js';
+import planRoutes from './admin/planRoutes.js';
 
 const router = express.Router();
 
@@ -9,5 +11,7 @@ const router = express.Router();
 router.use('/franchises', franchiseRoutes);
 router.use('/dashboard', dashboardRoutes);
 router.use('/staff', staffRoutes);
+router.use('/customers', customerRoutes);
+router.use('/plans', planRoutes);
 
 export default router;

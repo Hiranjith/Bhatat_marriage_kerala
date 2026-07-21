@@ -43,6 +43,11 @@ const initDB = async () => {
         photo_3 VARCHAR(255) DEFAULT NULL,
         photo_4 VARCHAR(255) DEFAULT NULL,
         refresh_token VARCHAR(255),
+        verification ENUM('VERIFIED', 'UNVERIFIED') DEFAULT 'UNVERIFIED',
+        plan ENUM('GOLD', 'PREMIUM', 'FREE', 'SILVER') DEFAULT 'FREE',
+        status ENUM('ACTIVE', 'BLOCKED', 'BANNED', 'FREEZED', 'REPORTED') DEFAULT 'ACTIVE',
+        is_online BOOLEAN DEFAULT FALSE,
+        last_seen TIMESTAMP NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         INDEX idx_mobile (mobile_number),
@@ -277,6 +282,38 @@ const initDB = async () => {
     `;
     await promisePool.query(createStaffTableQuery);
     console.log('BM_Staff_data table checked/created successfully.');
+
+    const createPlansTableQuery = `
+      CREATE TABLE IF NOT EXISTS bm_user_plans (
+        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+        package_id VARCHAR(20) UNIQUE NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        pricing INT NOT NULL,
+        duration VARCHAR(100) NOT NULL,
+        plan_status ENUM('active', 'inactive') DEFAULT 'active',
+        plan_features JSON NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_package_id (package_id)
+      );
+    `;
+    await promisePool.query(createPlansTableQuery);
+    console.log('bm_user_plans table checked/created successfully.');
+
+    // Seed the plans if the table is empty
+    const [existingPlans] = await promisePool.query('SELECT COUNT(*) as count FROM bm_user_plans');
+    if (existingPlans[0].count === 0) {
+      const seedPlansQuery = `
+        INSERT INTO bm_user_plans (package_id, name, pricing, duration, plan_status, plan_features) VALUES
+        ('PKG-01', 'Standard Plan', 0, 'Unlimited', 'active', '["Profile Listing", "Browse Profiles"]'),
+        ('PKG-02', 'Silver Plan', 400, '1 Month', 'active', '["Profile Listing", "Browse Profiles", "View Photos & Horoscopes"]'),
+        ('PKG-03', 'Gold Plan', 600, '1 Month', 'active', '["Profile Listing", "Browse Profiles", "View Photos & Horoscopes", "Detailed Profile Info", "Direct Chat & Messaging"]'),
+        ('PKG-04', 'Platinum Plan', 800, '1 Month', 'active', '["Profile Listing", "Browse Profiles", "View Photos & Horoscopes", "Detailed Profile Info", "Direct Chat & Messaging", "View Contact Numbers", "Download Horoscope"]'),
+        ('PKG-05', 'Diamond Plan', 1000, '1 Month', 'active', '["Profile Listing", "Browse Profiles", "View Photos & Horoscopes", "Detailed Profile Info", "Direct Chat & Messaging", "View Contact Numbers", "Download Horoscope", "Premium Profile Badge", "Video Calling"]')
+      `;
+      await promisePool.query(seedPlansQuery);
+      console.log('bm_user_plans seeded with initial data.');
+    }
 
     console.log('Database initialization completed successfully.');
     process.exit(0);

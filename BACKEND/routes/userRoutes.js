@@ -15,8 +15,12 @@ import {
   resetPassword,
   getProfileCompletion
 } from '../controllers/userController.js';
+import { verifyUserSession } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
+
+// Apply the middleware to all user routes to ensure they are logged in
+router.use(verifyUserSession);
 
 // Multer config for image upload
 const storage = multer.diskStorage({

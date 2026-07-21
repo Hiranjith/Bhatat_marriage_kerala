@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axiosInstance from '../../utils/axiosInstance';
 
 const ALL_AVAILABLE_FEATURES = [
   "Profile Listing",
@@ -11,83 +12,10 @@ const ALL_AVAILABLE_FEATURES = [
   "Premium Profile Badge",
   "Video Calling"
 ];
-
-const INITIAL_PACKAGES = [
-  {
-    id: "PKG-01",
-    name: "Standard Plan",
-    price: 0,
-    duration: "Unlimited",
-    status: "Active",
-    features: [
-      "Profile Listing",
-      "Browse Profiles"
-    ]
-  },
-  {
-    id: "PKG-02",
-    name: "Silver Plan",
-    price: 400,
-    duration: "1 Month",
-    status: "Active",
-    features: [
-      "Profile Listing",
-      "Browse Profiles",
-      "View Photos & Horoscopes"
-    ]
-  },
-  {
-    id: "PKG-03",
-    name: "Gold Plan",
-    price: 600,
-    duration: "1 Month",
-    status: "Active",
-    features: [
-      "Profile Listing",
-      "Browse Profiles",
-      "View Photos & Horoscopes",
-      "Detailed Profile Info",
-      "Direct Chat & Messaging"
-    ]
-  },
-  {
-    id: "PKG-04",
-    name: "Platinum Plan",
-    price: 800,
-    duration: "1 Month",
-    status: "Active",
-    features: [
-      "Profile Listing",
-      "Browse Profiles",
-      "View Photos & Horoscopes",
-      "Detailed Profile Info",
-      "Direct Chat & Messaging",
-      "View Contact Numbers",
-      "Download Horoscope"
-    ]
-  },
-  {
-    id: "PKG-05",
-    name: "Diamond Plan",
-    price: 1000,
-    duration: "1 Month",
-    status: "Active",
-    features: [
-      "Profile Listing",
-      "Browse Profiles",
-      "View Photos & Horoscopes",
-      "Detailed Profile Info",
-      "Direct Chat & Messaging",
-      "View Contact Numbers",
-      "Download Horoscope",
-      "Premium Profile Badge",
-      "Video Calling"
-    ]
-  }
-];
-
 export default function PackagesManagement() {
-  const [packages, setPackages] = useState(INITIAL_PACKAGES);
+  const [packages, setPackages] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [selectedPackage, setSelectedPackage] = useState(null); // For edit modal
   const [editingFields, setEditingFields] = useState({
     name: '',
@@ -97,6 +25,21 @@ export default function PackagesManagement() {
     features: []
   });
   const [selectedFeatureToAdd, setSelectedFeatureToAdd] = useState('');
+
+  useEffect(() => {
+    const fetchPackages = async () => {
+      try {
+        const response = await axiosInstance.get('/admin/plans');
+        setPackages(response.data.plans);
+        setLoading(false);
+      } catch (err) {
+        console.error('Failed to fetch packages:', err);
+        setError('Failed to load packages. Please try again.');
+        setLoading(false);
+      }
+    };
+    fetchPackages();
+  }, []);
 
   const handleOpenEdit = (pkg) => {
     setSelectedPackage(pkg);
@@ -147,13 +90,28 @@ export default function PackagesManagement() {
     }
   };
 
-  const handleSavePackage = () => {
+  const handleSavePackage = async () => {
     if (!editingFields.name.trim() || editingFields.price < 0) {
       alert("Please enter a valid package name and price.");
       return;
     }
-    setPackages(prev => prev.map(p => p.id === selectedPackage.id ? { ...p, ...editingFields } : p));
-    setSelectedPackage(null);
+    
+    try {
+      const response = await axiosInstance.put(`/admin/plans/${selectedPackage.id}`, {
+        name: editingFields.name,
+        price: editingFields.price,
+        duration: editingFields.duration,
+        status: editingFields.status,
+        features: editingFields.features
+      });
+      
+      const updatedPlan = response.data.plan;
+      setPackages(prev => prev.map(p => p.id === updatedPlan.id ? updatedPlan : p));
+      setSelectedPackage(null);
+    } catch (err) {
+      console.error('Failed to update package:', err);
+      alert('Failed to update package. Please try again.');
+    }
   };
 
   // Features not yet added to editing package

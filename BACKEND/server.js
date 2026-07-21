@@ -33,10 +33,10 @@ app.use(helmet());
 app.use(compression());
 
 // 3. Rate limiting to prevent brute-force and DDoS attacks
-// Limits each IP to 100 requests per 15 minutes
+// Limits each IP to 2000 requests per 15 minutes (accommodates 15s polling)
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, 
-  max: 100, 
+  max: 2000, 
   standardHeaders: true, 
   legacyHeaders: false,
   message: 'Too many requests from this IP, please try again after 15 minutes'
