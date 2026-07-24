@@ -1,4 +1,38 @@
 import pool from '../../config/db.js';
+import bcrypt from 'bcrypt';
+import nodemailer from 'nodemailer';
+
+// Login Staff
+export const loginStaff = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
+    // Check if staff exists with this email
+    const [staffRows] = await pool.execute('SELECT * FROM BM_Staff_data WHERE email = ?', [email]);
+    
+    if (staffRows.length === 0) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+    
+    const staff = staffRows[0];
+    
+    // Verify password using bcrypt
+    const validPassword = await bcrypt.compare(password, staff.password);
+    if (!validPassword) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+    
+    if (staff.account_status !== 'active') {
+      return res.status(403).json({ error: 'Account is inactive or suspended' });
+    }
+    
+    res.status(200).json({ message: 'Login successful', staff });
+  } catch (error) {
+    console.error('Error logging in staff:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 
 // Create a new staff
 export const createStaff = async (req, res) => {
@@ -7,6 +41,13 @@ export const createStaff = async (req, res) => {
 
     if (!name || !role) {
       return res.status(400).json({ error: 'Name and role are required' });
+    }
+
+    if (email) {
+      const [existingStaff] = await pool.execute('SELECT id FROM BM_Staff_data WHERE email = ?', [email]);
+      if (existingStaff.length > 0) {
+        return res.status(409).json({ error: 'A staff member with this email already exists.' });
+      }
     }
 
     // Generate staff_id
@@ -20,10 +61,16 @@ export const createStaff = async (req, res) => {
       staff_id = `STF${String(nextNum).padStart(4, '0')}`;
     }
 
+    // Generate password: name without spaces + last 4 digits of staff_id
+    const sanitizedName = name.replace(/\s+/g, '');
+    const plainPassword = `${sanitizedName}${staff_id.slice(-4)}`;
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(plainPassword, saltRounds);
+
     const query = `
       INSERT INTO BM_Staff_data 
-      (staff_id, name, role, franchise, email, phone_number, account_status) 
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      (staff_id, name, role, franchise, email, phone_number, account_status, password) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     await pool.execute(query, [
@@ -33,8 +80,35 @@ export const createStaff = async (req, res) => {
       franchise || null, 
       email || null, 
       phone_number || null, 
-      account_status || 'active'
+      account_status || 'active',
+      hashedPassword
     ]);
+
+    // Send Email with generated password
+    if (email && process.env.SMTP_USER && process.env.SMTP_PASS) {
+      const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS
+        }
+      });
+
+      const mailOptions = {
+        from: process.env.SMTP_USER,
+        to: email,
+        subject: 'Welcome to Bharat Marriage - Staff Account',
+        text: `Dear ${name},\n\nYour staff account for the Bharat Marriage Admin Portal has been successfully created.\n\nYour temporary password is: ${plainPassword}\n\nPlease use this password to log in at the staff portal.\n\nBest regards,\nThe Bharat Marriage Team`
+      };
+
+      try {
+        await transporter.sendMail(mailOptions);
+      } catch (emailError) {
+        console.error('Failed to send staff welcome email:', emailError);
+      }
+    } else {
+      console.warn('SMTP credentials missing or email not provided. Welcome email not sent.');
+    }
 
     res.status(201).json({ message: 'Staff created successfully', staff_id });
   } catch (error) {

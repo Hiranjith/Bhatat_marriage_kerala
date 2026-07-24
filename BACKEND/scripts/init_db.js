@@ -72,6 +72,7 @@ const initDB = async () => {
         height VARCHAR(50),
         marital_status VARCHAR(100),
         place VARCHAR(255),
+        pincode VARCHAR(10),
         country VARCHAR(100),
         state VARCHAR(100),
         district VARCHAR(100),
@@ -112,6 +113,7 @@ const initDB = async () => {
         height VARCHAR(50),
         marital_status VARCHAR(100),
         place VARCHAR(255),
+        pincode VARCHAR(10),
         country VARCHAR(100),
         state VARCHAR(100),
         district VARCHAR(100),
@@ -147,6 +149,7 @@ const initDB = async () => {
         height VARCHAR(50),
         marital_status VARCHAR(100),
         place VARCHAR(255),
+        pincode VARCHAR(10),
         country VARCHAR(100),
         state VARCHAR(100),
         district VARCHAR(100),
@@ -182,6 +185,7 @@ const initDB = async () => {
         height VARCHAR(50),
         marital_status VARCHAR(100),
         place VARCHAR(255),
+        pincode VARCHAR(10),
         country VARCHAR(100),
         state VARCHAR(100),
         district VARCHAR(100),
@@ -273,6 +277,7 @@ const initDB = async () => {
         role ENUM('USER MANAGEMENT', 'FINANCE & PACKAGE') NOT NULL,
         franchise VARCHAR(255),
         email VARCHAR(255),
+        password VARCHAR(255) NOT NULL,
         phone_number VARCHAR(20),
         account_status ENUM('active', 'inactive') DEFAULT 'active',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -314,6 +319,24 @@ const initDB = async () => {
       await promisePool.query(seedPlansQuery);
       console.log('bm_user_plans seeded with initial data.');
     }
+
+    const createHeadFranchiseRequestsQuery = `
+      CREATE TABLE IF NOT EXISTS bm_head_franchise_requests (
+        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+        request_id VARCHAR(20) UNIQUE NOT NULL,
+        profile_id VARCHAR(20) NOT NULL,
+        pincode VARCHAR(10) NOT NULL,
+        status ENUM('Unassigned', 'Assigned') DEFAULT 'Unassigned',
+        assigned_franchise_id VARCHAR(20) DEFAULT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (profile_id) REFERENCES user_registration(profile_id) ON DELETE CASCADE,
+        INDEX idx_pincode (pincode),
+        INDEX idx_status (status)
+      );
+    `;
+    await promisePool.query(createHeadFranchiseRequestsQuery);
+    console.log('bm_head_franchise_requests table checked/created successfully.');
 
     console.log('Database initialization completed successfully.');
     process.exit(0);

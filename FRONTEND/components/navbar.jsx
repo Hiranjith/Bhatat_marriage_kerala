@@ -11,7 +11,7 @@ export default function Navbar() {
   const [isMobileStateDropdownOpen, setIsMobileStateDropdownOpen] = useState(false);
   const [isDemoOpen, setIsDemoOpen] = useState(false);
 
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const isHomePage = location.pathname === '/';
@@ -40,6 +40,7 @@ export default function Navbar() {
   }, [location, user]);
 
   const handleLogout = () => {
+    logout();
     localStorage.removeItem('isLoggedIn');
     localStorage.removeItem('guestStar');
     sessionStorage.removeItem('guestStar');

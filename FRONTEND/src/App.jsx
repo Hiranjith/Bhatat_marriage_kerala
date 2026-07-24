@@ -47,6 +47,16 @@ function SuperAdminProtectedRoute({ children }) {
   return children;
 }
 
+function UserProtectedRoute({ children }) {
+  const token = localStorage.getItem('accessToken');
+  const user = localStorage.getItem('user');
+  
+  if (!token || !user) {
+    return <Navigate to="/login" replace />;
+  }
+  return children;
+}
+
 function App() {
   const location = useLocation();
   const isAdminPath = location.pathname.startsWith('/super-admin') || location.pathname.startsWith('/admin');
@@ -112,8 +122,8 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/password-sent" element={<PasswordSent />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/profile/:profileId" element={<ProfileDetails />} />
+        <Route path="/dashboard" element={<UserProtectedRoute><Dashboard /></UserProtectedRoute>} />
+        <Route path="/profile/:profileId" element={<UserProtectedRoute><ProfileDetails /></UserProtectedRoute>} />
         <Route path="/porutham" element={<Porutham />} />
         <Route path="/muhurtham" element={<Muhurtham />} />
         <Route path='/contact-us' element={<Contact/>}/>

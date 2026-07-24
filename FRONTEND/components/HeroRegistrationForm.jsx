@@ -9,6 +9,7 @@ export default function HeroRegistrationForm({ onClose } = {}) {
   const [email, setEmail] = useState('');
   const [district, setDistrict] = useState('');
   const [loading, setLoading] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   // Date of Birth states
   const [dobDay, setDobDay] = useState('');
@@ -275,6 +276,8 @@ export default function HeroRegistrationForm({ onClose } = {}) {
           <input
             type="checkbox"
             id="agreeTermsHero"
+            checked={termsAccepted}
+            onChange={(e) => setTermsAccepted(e.target.checked)}
             required
             className="mt-0.5 h-3 w-3 rounded border-surface-variant text-deep-maroon focus:ring-deep-maroon cursor-pointer"
           />
@@ -287,7 +290,7 @@ export default function HeroRegistrationForm({ onClose } = {}) {
         {/* Submit */}
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || !termsAccepted}
           className="w-full bg-deep-maroon hover:bg-primary text-white font-semibold py-2 rounded-lg mt-0.5 shadow-md hover:shadow-lg transition-all active:scale-[0.98] cursor-pointer text-center text-[10px] tracking-wider uppercase disabled:opacity-70 disabled:cursor-not-allowed"
         >
           {loading ? 'Registering...' : 'Register Free'}

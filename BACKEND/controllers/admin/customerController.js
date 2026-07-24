@@ -2,7 +2,7 @@ import pool from '../../config/db.js';
 
 export const getCustomers = async (req, res) => {
   try {
-    const { search, gender, status, page = 1, limit = 10 } = req.query;
+    const { search, gender, status, page = 1, limit = 10, franchise_id } = req.query;
 
     let baseSelect = `
       SELECT 
@@ -52,10 +52,10 @@ export const getCustomers = async (req, res) => {
     }
 
     // Gender filter
-    if (gender && gender !== 'All Genders') {
-      if (gender.includes('Female')) {
+    if (gender && gender !== 'All' && gender !== 'All Genders') {
+      if (gender === 'Bride' || gender === 'Female' || gender.includes('Female')) {
         filters += ` AND ur.gender = 'Female'`;
-      } else if (gender.includes('Male')) {
+      } else if (gender === 'Groom' || gender === 'Male' || gender.includes('Male')) {
         filters += ` AND ur.gender = 'Male'`;
       }
     }
@@ -67,6 +67,28 @@ export const getCustomers = async (req, res) => {
       } else {
         filters += ` AND ur.status = ?`;
         queryParams.push(status.toUpperCase()); // ACTIVE, BLOCKED, BANNED
+      }
+    }
+
+    // Franchise pincode filter
+    if (franchise_id) {
+      const [franchiseRows] = await pool.execute('SELECT pin_codes FROM BM_Franchise WHERE franchise_id = ?', [franchise_id]);
+      if (franchiseRows.length > 0) {
+        let pinCodes = franchiseRows[0].pin_codes;
+        if (typeof pinCodes === 'string') {
+          try { pinCodes = JSON.parse(pinCodes); } catch (e) { pinCodes = []; }
+        }
+        if (Array.isArray(pinCodes) && pinCodes.length > 0) {
+          const placeholders = pinCodes.map(() => '?').join(',');
+          filters += ` AND COALESCE(h.pincode, c.pincode, m.pincode, o.pincode) IN (${placeholders})`;
+          queryParams.push(...pinCodes);
+        } else {
+          // If franchise has no pincodes, it shouldn't see any users
+          filters += ` AND 1=0`;
+        }
+      } else {
+        // If franchise not found, shouldn't see any users
+        filters += ` AND 1=0`;
       }
     }
 

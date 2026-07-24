@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axiosInstance from '../../utils/axiosInstance';
 
 export default function AdminLogin() {
   const [username, setUsername] = useState('');
@@ -7,20 +8,34 @@ export default function AdminLogin() {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const cleanUser = username.trim().toLowerCase();
     
-    if (cleanUser === 'userstaff@admin.com' && password === 'password') {
-      localStorage.setItem('adminRole', 'User Management Staff');
+    setIsLoading(true);
+    try {
+      const response = await axiosInstance.post('/admin/staff/login', {
+        email: cleanUser,
+        password: password
+      });
+      
+      const staff = response.data.staff;
+      
+      let mappedRole = 'User Management Staff';
+      if (staff.role === 'FINANCE & PACKAGE') mappedRole = 'Finance & Package Staff';
+      
+      localStorage.setItem('adminRole', mappedRole);
+      localStorage.setItem('adminFranchise', staff.franchise || '');
       localStorage.setItem('isAdminLoggedIn', 'true');
       navigate('/admin/dashboard');
-    } else if (cleanUser === 'financestaff@admin.com' && password === 'password') {
-      localStorage.setItem('adminRole', 'Finance & Package Staff');
-      localStorage.setItem('isAdminLoggedIn', 'true');
-      navigate('/admin/dashboard');
-    } else {
-      alert("Invalid administrator credentials. Try:\n- userstaff@admin.com / password\n- financestaff@admin.com / password");
+      
+    } catch (error) {
+      console.warn("API login failed", error);
+      alert(error.response?.data?.error || "Invalid administrator credentials.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -88,20 +103,14 @@ export default function AdminLogin() {
 
             <button
               type="submit"
-              className="w-full bg-gradient-to-r from-deep-maroon to-primary hover:from-primary hover:to-deep-maroon text-white text-xs font-bold py-3 px-4 rounded-xl shadow-md transition-all duration-300 uppercase tracking-wider text-center cursor-pointer active:scale-98 flex items-center justify-center gap-2"
+              disabled={isLoading}
+              className={`w-full bg-gradient-to-r from-deep-maroon to-primary hover:from-primary hover:to-deep-maroon text-white text-xs font-bold py-3 px-4 rounded-xl shadow-md transition-all duration-300 uppercase tracking-wider text-center flex items-center justify-center gap-2 ${isLoading ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer active:scale-98'}`}
             >
-              <span>Login Securely</span>
+              <span>{isLoading ? 'Logging In...' : 'Login Securely'}</span>
             </button>
           </form>
 
-          {/* Quick Tips */}
-          <div className="mt-6 p-4 rounded-xl bg-slate-50 border border-slate-150/60 text-left space-y-2 text-[10px] text-slate-550 font-semibold">
-            <p className="font-bold text-slate-700 uppercase tracking-wide">Demo Accounts:</p>
-            <div className="space-y-1">
-              <p>👤 <span className="font-bold text-charcoal-text">User Staff:</span> userstaff@admin.com (pwd: password)</p>
-              <p>💳 <span className="font-bold text-charcoal-text">Finance Staff:</span> financestaff@admin.com (pwd: password)</p>
-            </div>
-          </div>
+
 
         </div>
       </div>

@@ -56,6 +56,7 @@ export default function StaffManagment() {
   const [isEditing, setIsEditing] = useState(false);
   const [editingStaffId, setEditingStaffId] = useState(null);
   const [franchiseFilter, setFranchiseFilter] = useState('All');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Custom Dialog States
   const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, title: '', message: '', onConfirm: null });
@@ -117,6 +118,8 @@ export default function StaffManagment() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     try {
       if (isEditing) {
         await axiosInstance.put(`/admin/staff/${editingStaffId}`, {
@@ -144,8 +147,10 @@ export default function StaffManagment() {
       setAlertDialog({
         isOpen: true,
         title: 'Error',
-        message: 'Failed to save staff member'
+        message: error.response?.data?.error || 'Failed to save staff member'
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -432,9 +437,10 @@ export default function StaffManagment() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-deep-maroon hover:bg-primary text-white font-bold rounded-xl text-xs cursor-pointer select-none"
+                  disabled={isSubmitting}
+                  className={`px-4 py-2 bg-deep-maroon hover:bg-primary text-white font-bold rounded-xl text-xs cursor-pointer select-none ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
                 >
-                  {isEditing ? 'Save Changes' : 'Register Staff'}
+                  {isSubmitting ? 'Saving...' : (isEditing ? 'Save Changes' : 'Register Staff')}
                 </button>
               </div>
             </form>

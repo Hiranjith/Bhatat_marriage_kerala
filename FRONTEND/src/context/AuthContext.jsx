@@ -56,9 +56,19 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('user', JSON.stringify(userData));
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('user');
+  const logout = async () => {
+    try {
+      const { default: axiosInstance } = await import('../utils/axiosInstance');
+      await axiosInstance.post('/auth/logout');
+    } catch (err) {
+      console.error('Logout API failed', err);
+    } finally {
+      setUser(null);
+      localStorage.removeItem('user');
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('isLoggedIn');
+    }
   };
 
   const updateUser = (newUserData) => {

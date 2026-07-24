@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axiosInstance from '../../utils/axiosInstance';
+import AddUserModal from '../../../components/admin/AddUserModal';
 
 export default function UserManagement() {
   const [users, setUsers] = useState([]);
@@ -16,6 +17,8 @@ export default function UserManagement() {
   const [drawerStatus, setDrawerStatus] = useState('');
   const [alertModal, setAlertModal] = useState({ isOpen: false, type: '', title: '', message: '', onConfirm: null });
   const [toast, setToast] = useState({ isVisible: false, message: '', type: 'success' });
+
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
 
   const showToast = (message, type = 'success') => {
     setToast({ isVisible: true, message, type });
@@ -196,17 +199,30 @@ export default function UserManagement() {
     });
   };
 
+  const handleOpenAddUserModal = () => {
+    setShowAddUserModal(true);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header section */}
-      <div>
-        <h2 className="text-lg sm:text-xl font-bold text-slate-800 flex items-center gap-2">
-          <span className="w-1.5 h-1.5 rounded-full bg-deep-maroon"></span>
-          User Management
-        </h2>
-        <p className="text-xs text-slate-500 mt-1">
-          Review matrimonial registrations, verify profiles, handle reports, and manage account statuses.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h2 className="text-lg sm:text-xl font-bold text-slate-800 flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-deep-maroon"></span>
+            User Management
+          </h2>
+          <p className="text-xs text-slate-500 mt-1">
+            Review matrimonial registrations, verify profiles, handle reports, and manage account statuses.
+          </p>
+        </div>
+        <button
+          onClick={handleOpenAddUserModal}
+          className="bg-deep-maroon hover:bg-primary text-white text-xs font-bold py-2 px-4 rounded-xl shadow-md transition-all cursor-pointer flex items-center gap-1.5 self-start active:scale-95 border border-white/10 select-none"
+        >
+          <span className="material-symbols-outlined text-sm">add</span>
+          Add New User
+        </button>
       </div>
 
       {/* Filter and search control board */}
@@ -632,6 +648,25 @@ export default function UserManagement() {
           </div>
         </div>
       )}
+
+      {/* Add User Modal */}
+      <AddUserModal 
+        isOpen={showAddUserModal} 
+        onClose={() => setShowAddUserModal(false)} 
+        onSuccess={(msg) => {
+          showToast(msg);
+          fetchCustomers();
+        }}
+        onError={(msg) => {
+          setAlertModal({
+            isOpen: true,
+            type: 'error',
+            title: 'Error',
+            message: msg,
+            onConfirm: null
+          });
+        }}
+      />
 
       {/* Toast Notification */}
       {toast.isVisible && (

@@ -1,50 +1,12 @@
-import React, { useState } from 'react';
-
-const INITIAL_USERS = [
-  {
-    id: "BKLH000000001",
-    name: "Aishwarya R.",
-    gender: "Bride",
-    age: 26,
-    height: "5'4\"",
-    religion: "Hindu",
-    caste: "Nair",
-    education: "M.Tech",
-    profession: "Software Engineer",
-    location: "Bangalore",
-    image: "https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&q=80&w=400&h=500",
-    verified: true,
-    premium: true,
-    status: "Active",
-    online: true,
-    reported: false,
-    reportReason: "",
-    bio: "I am a career-oriented, independent Software Engineer based in Bangalore. I value family traditions, enjoy cooking, reading, and traveling. Looking for a compatible partner."
-  },
-  {
-    id: "BKLH000000002",
-    name: "Adithya K.",
-    gender: "Groom",
-    age: 28,
-    height: "5'11\"",
-    religion: "Hindu",
-    caste: "Iyer",
-    education: "MBA",
-    profession: "Product Manager",
-    location: "Chennai",
-    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=400&h=500",
-    verified: false,
-    premium: false,
-    status: "Active",
-    online: false,
-    reported: false,
-    reportReason: "",
-    bio: "I am a Product Manager currently working in Chennai. I love hiking, photography, and playing music. Looking for someone with a modern yet traditional outlook."
-  }
-];
+import React, { useState, useEffect } from 'react';
+import axiosInstance from '../../utils/axiosInstance';
+import AddUserModal from '../../../components/admin/AddUserModal';
 
 export default function UserManagement() {
-  const [users, setUsers] = useState(INITIAL_USERS);
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [genderFilter, setGenderFilter] = useState('All');
@@ -52,59 +14,218 @@ export default function UserManagement() {
 
   // Local drawer state for tracking changes before Save
   const [drawerVerified, setDrawerVerified] = useState(false);
-  const [drawerStatus, setDrawerStatus] = useState('Active');
+  const [drawerStatus, setDrawerStatus] = useState('');
+  const [alertModal, setAlertModal] = useState({ isOpen: false, type: '', title: '', message: '', onConfirm: null });
+  const [toast, setToast] = useState({ isVisible: false, message: '', type: 'success' });
 
-  // Filter logic
-  const filteredUsers = users.filter(user => {
-    const matchesSearch = 
-      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.profession.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.location.toLowerCase().includes(searchQuery.toLowerCase());
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
 
-    const matchesStatus = 
-      statusFilter === 'All' ||
-      (statusFilter === 'Reported' && user.reported) ||
-      (statusFilter === user.status);
+  const showToast = (message, type = 'success') => {
+    setToast({ isVisible: true, message, type });
+    setTimeout(() => setToast(prev => ({ ...prev, isVisible: false })), 3000);
+  };
 
-    const matchesGender = 
-      genderFilter === 'All' || 
-      user.gender === genderFilter;
+  const getStatusBadge = (status) => {
+    const s = (status || 'ACTIVE').toUpperCase();
+    switch (s) {
+      case 'ACTIVE': return { color: 'bg-emerald-50 border-emerald-100 text-emerald-700', icon: 'check_circle' };
+      case 'BLOCKED': return { color: 'bg-amber-50 border-amber-100 text-amber-700', icon: 'block' };
+      case 'BANNED': return { color: 'bg-rose-50 border-rose-100 text-rose-700', icon: 'cancel' };
+      case 'FREEZED': return { color: 'bg-sky-50 border-sky-100 text-sky-700', icon: 'ac_unit' };
+      case 'REPORTED': return { color: 'bg-orange-50 border-orange-100 text-orange-700', icon: 'warning' };
+      default: return { color: 'bg-slate-50 border-slate-200 text-slate-500', icon: 'help' };
+    }
+  };
 
-    return matchesSearch && matchesStatus && matchesGender;
-  });
+  const calculateAge = (dob) => {
+    if (!dob) return 'N/A';
+    const diff_ms = Date.now() - new Date(dob).getTime();
+    const age_dt = new Date(diff_ms);
+    return Math.abs(age_dt.getUTCFullYear() - 1970);
+  };
+
+  const fetchCustomers = async (isPolling = false) => {
+    try {
+      if (!isPolling) setLoading(true);
+      if (!isPolling) setError(null);
+      
+      const params = new URLSearchParams();
+      if (searchQuery) params.append('search', searchQuery);
+      if (genderFilter !== 'All') params.append('gender', genderFilter);
+      if (statusFilter !== 'All') params.append('status', statusFilter);
+      
+      const adminFranchise = localStorage.getItem('adminFranchise');
+      if (adminFranchise) params.append('franchise_id', adminFranchise);
+      
+      const response = await axiosInstance.get(`/admin/customers?${params.toString()}`);
+      
+      const mappedUsers = response.data.customers.map(user => {
+        const locationParts = [user.place, user.district, user.state].filter(Boolean);
+        const locationStr = locationParts.length > 0 ? locationParts.join(', ') : "Location Not Provided";
+
+        return {
+          id: user.profile_id,
+          name: user.full_name,
+          gender: user.gender === 'Female' ? 'Bride' : user.gender === 'Male' ? 'Groom' : user.gender,
+          age: calculateAge(user.dob),
+          height: user.height || "N/A",
+          religion: user.religion || "N/A",
+          caste: "N/A", 
+          education: user.education || "N/A",
+          profession: user.profession || "N/A",
+          location: locationStr,
+          image: user.photo_1 || "https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&q=80&w=400&h=500",
+          verified: user.verification === 'VERIFIED',
+          premium: user.plan && user.plan !== 'FREE',
+          planName: user.plan || "FREE",
+          status: user.status || "Active",
+          online: !!user.is_online,
+          hasActiveSession: !!user.has_active_session,
+          reported: user.status === 'Reported',
+          reportReason: user.status === 'Reported' ? "User reported by community" : "",
+          bio: "Bio information is currently not fetched."
+        };
+      });
+      
+      setUsers(mappedUsers);
+      
+      setSelectedUser(prevSelected => {
+        if (prevSelected) {
+          const updated = mappedUsers.find(u => u.id === prevSelected.id);
+          if (updated) {
+            // Only update if there's an actual change to prevent unnecessary re-renders
+            if (updated.hasActiveSession !== prevSelected.hasActiveSession || updated.online !== prevSelected.online) {
+              return { ...prevSelected, online: updated.online, hasActiveSession: updated.hasActiveSession };
+            }
+          }
+        }
+        return prevSelected;
+      });
+    } catch (err) {
+      console.error('Error fetching customers:', err);
+      setError('Failed to load users.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      fetchCustomers();
+    }, 300);
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery, statusFilter, genderFilter]);
+
+  useEffect(() => {
+    const pollInterval = setInterval(() => {
+      fetchCustomers(true);
+    }, 15000);
+    return () => clearInterval(pollInterval);
+  }, [searchQuery, statusFilter, genderFilter]);
 
   const handleOpenDetails = (user) => {
     setSelectedUser(user);
     setDrawerVerified(user.verified);
-    setDrawerStatus(user.status);
+    setDrawerStatus('');
   };
 
-  const handleSaveDrawerChanges = () => {
-    setUsers(prev => prev.map(u => u.id === selectedUser.id ? { ...u, verified: drawerVerified, status: drawerStatus } : u));
-    alert(`Changes for user "${selectedUser.name}" saved successfully!`);
-    setSelectedUser(null);
+  const handleSaveDrawerChanges = async () => {
+    try {
+      const statusToSave = drawerStatus || (selectedUser.reported ? 'Reported' : selectedUser.status);
+      await axiosInstance.put(`/admin/customers/${selectedUser.id}`, {
+        verification: drawerVerified,
+        status: statusToSave
+      });
+      setUsers(prev => prev.map(u => u.id === selectedUser.id ? { ...u, verified: drawerVerified, status: statusToSave } : u));
+      setSelectedUser(null);
+      showToast('Changes saved');
+    } catch (err) {
+      console.error('Failed to save user changes:', err);
+      setAlertModal({
+        isOpen: true,
+        type: 'error',
+        title: 'Error',
+        message: 'Failed to save changes. Please try again.',
+        onConfirm: null
+      });
+    }
   };
 
-  const handleToggleVerificationInTable = (id) => {
-    setUsers(prev => prev.map(u => u.id === id ? { ...u, verified: !u.verified } : u));
+  const handleToggleVerificationInTable = async (id, currentVerified) => {
+    try {
+      const newVerifiedStatus = !currentVerified;
+      // Optimistic update
+      setUsers(prev => prev.map(u => u.id === id ? { ...u, verified: newVerifiedStatus } : u));
+      await axiosInstance.put(`/admin/customers/${id}`, {
+        verification: newVerifiedStatus
+      });
+    } catch (err) {
+      console.error('Failed to toggle verification:', err);
+      // Revert optimistic update
+      setUsers(prev => prev.map(u => u.id === id ? { ...u, verified: currentVerified } : u));
+      setAlertModal({
+        isOpen: true,
+        type: 'error',
+        title: 'Verification Failed',
+        message: 'Failed to update verification status. Please try again.',
+        onConfirm: null
+      });
+    }
   };
 
-  const handleForceLogout = (name) => {
-    alert(`Force logged out user "${name}" successfully!`);
+  const handleForceLogout = (id, name) => {
+    setAlertModal({
+      isOpen: true,
+      type: 'confirm',
+      title: 'Force Logout',
+      message: `Are you sure you want to forcefully log out ${name}? This will instantly end their active session.`,
+      onConfirm: async () => {
+        setAlertModal({ isOpen: false });
+        try {
+          await axiosInstance.post(`/admin/customers/force-logout/${id}`);
+          setUsers(prev => prev.map(u => u.id === id ? { ...u, online: false, hasActiveSession: false } : u));
+          if (selectedUser && selectedUser.id === id) {
+            setSelectedUser({ ...selectedUser, online: false, hasActiveSession: false });
+          }
+          showToast('User logged out.');
+        } catch (err) {
+          console.error('Failed to force logout:', err);
+          setAlertModal({
+            isOpen: true,
+            type: 'error',
+            title: 'Error',
+            message: 'Failed to force log out user. Please try again.',
+            onConfirm: null
+          });
+        }
+      }
+    });
+  };
+
+  const handleOpenAddUserModal = () => {
+    setShowAddUserModal(true);
   };
 
   return (
     <div className="space-y-6">
       {/* Header section */}
-      <div>
-        <h2 className="text-lg sm:text-xl font-bold text-slate-800 flex items-center gap-2">
-          <span className="w-1.5 h-1.5 rounded-full bg-deep-maroon"></span>
-          User Management
-        </h2>
-        <p className="text-xs text-slate-500 mt-1">
-          Review matrimonial registrations, verify profiles, handle reports, and manage account statuses.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h2 className="text-lg sm:text-xl font-bold text-slate-800 flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-deep-maroon"></span>
+            User Management
+          </h2>
+          <p className="text-xs text-slate-500 mt-1">
+            Review matrimonial registrations, verify profiles, handle reports, and manage account statuses.
+          </p>
+        </div>
+        <button
+          onClick={handleOpenAddUserModal}
+          className="bg-deep-maroon hover:bg-primary text-white text-xs font-bold py-2 px-4 rounded-xl shadow-md transition-all cursor-pointer flex items-center gap-1.5 self-start active:scale-95 border border-white/10 select-none"
+        >
+          <span className="material-symbols-outlined text-sm">add</span>
+          Add New User
+        </button>
       </div>
 
       {/* Filter and search control board */}
@@ -149,6 +270,7 @@ export default function UserManagement() {
               <option value="Active">Active</option>
               <option value="Blocked">Blocked</option>
               <option value="Banned">Banned</option>
+              <option value="Freezed">Freezed</option>
               <option value="Reported">Reported Accounts</option>
             </select>
           </div>
@@ -171,7 +293,20 @@ export default function UserManagement() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
-              {filteredUsers.length === 0 ? (
+              {loading && users.length === 0 ? (
+                <tr>
+                  <td colSpan="7" className="py-12 text-center text-slate-400 font-semibold">
+                    <span className="material-symbols-outlined animate-spin text-3xl mb-1 block">autorenew</span>
+                    Loading users...
+                  </td>
+                </tr>
+              ) : error ? (
+                <tr>
+                  <td colSpan="7" className="py-12 text-center text-rose-500 font-semibold">
+                    {error}
+                  </td>
+                </tr>
+              ) : users.length === 0 ? (
                 <tr>
                   <td colSpan="7" className="py-12 text-center text-slate-400 font-semibold">
                     <span className="material-symbols-outlined text-3xl mb-1 block">people_outline</span>
@@ -179,7 +314,7 @@ export default function UserManagement() {
                   </td>
                 </tr>
               ) : (
-                filteredUsers.map((user) => (
+                users.map((user) => (
                   <tr 
                     key={user.id} 
                     onClick={() => handleOpenDetails(user)}
@@ -211,7 +346,7 @@ export default function UserManagement() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleToggleVerificationInTable(user.id);
+                          handleToggleVerificationInTable(user.id, user.verified);
                         }}
                         className={`px-2 py-0.5 rounded-full text-[9px] font-bold uppercase flex items-center gap-0.5 cursor-pointer border ${
                           user.verified 
@@ -236,13 +371,15 @@ export default function UserManagement() {
                       </span>
                     </td>
                     <td className="py-3 px-4">
-                      <span className={`inline-block px-2.5 py-0.5 rounded-full text-[9px] font-bold tracking-wide uppercase border ${
-                        user.status === 'Active'
-                          ? 'bg-emerald-50 border-emerald-100 text-emerald-700'
-                          : 'bg-rose-50 border-rose-100 text-rose-700'
-                      }`}>
-                        {user.status}
-                      </span>
+                      {(() => {
+                        const badge = getStatusBadge(user.status);
+                        return (
+                          <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-bold tracking-wide uppercase border ${badge.color}`}>
+                            <span className="material-symbols-outlined text-[10px]" style={{ fontVariationSettings: "'FILL' 1" }}>{badge.icon}</span>
+                            {user.status}
+                          </span>
+                        );
+                      })()}
                       {user.reported && (
                         <span 
                           className="ml-1.5 inline-flex items-center text-[9px] font-bold bg-amber-500 text-white px-1.5 py-0.2 rounded-sm"
@@ -286,11 +423,16 @@ export default function UserManagement() {
             <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50 sticky top-0">
               <div className="flex items-center gap-2">
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">{selectedUser.id}</span>
-                <span className={`inline-block px-1.5 py-0.2 rounded-sm text-[8px] font-black uppercase ${
-                  drawerStatus === 'Active' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
-                }`}>
-                  {drawerStatus}
-                </span>
+                {(() => {
+                  const currentStatus = drawerStatus || (selectedUser.reported ? 'Reported' : selectedUser.status);
+                  const badge = getStatusBadge(currentStatus);
+                  return (
+                    <span className={`inline-flex items-center gap-1 px-1.5 py-0.2 rounded-sm text-[8px] font-black uppercase border ${badge.color}`}>
+                      <span className="material-symbols-outlined text-[9px]" style={{ fontVariationSettings: "'FILL' 1" }}>{badge.icon}</span>
+                      {currentStatus}
+                    </span>
+                  );
+                })()}
               </div>
               <button 
                 onClick={() => setSelectedUser(null)}
@@ -407,9 +549,9 @@ export default function UserManagement() {
                 {drawerVerified ? 'Remove Verification' : 'Verify Profile'}
               </button>
 
-              {selectedUser.online && (
+              {selectedUser.hasActiveSession && (
                 <button
-                  onClick={() => handleForceLogout(selectedUser.name)}
+                  onClick={() => handleForceLogout(selectedUser.id, selectedUser.name)}
                   className="w-full sm:w-auto px-3 py-1.5 bg-slate-150 hover:bg-slate-200 border border-slate-250 rounded-xl text-xs font-bold text-slate-700 transition-all cursor-pointer"
                 >
                   Force Logout
@@ -417,26 +559,125 @@ export default function UserManagement() {
               )}
 
               <div className="w-full sm:w-auto">
-                <select
-                  value={drawerStatus}
-                  onChange={(e) => setDrawerStatus(e.target.value)}
-                  className="w-full border border-slate-350 rounded-xl py-1.5 px-3 bg-white text-xs font-bold text-slate-700 focus:outline-none"
-                >
-                  <option value="Active">Set Active</option>
-                  <option value="Blocked">Block Profile</option>
-                  <option value="Banned">Ban Profile</option>
-                </select>
+                {(() => {
+                  const actualStatus = selectedUser.reported ? 'Reported' : selectedUser.status;
+                  const getOptionClass = (val) => actualStatus === val ? "text-slate-400 italic bg-slate-50" : "";
+                  return (
+                    <select
+                      value={drawerStatus}
+                      onChange={(e) => setDrawerStatus(e.target.value)}
+                      className="w-full border border-slate-350 rounded-xl py-1.5 px-3 bg-white text-xs font-bold text-slate-700 focus:outline-none"
+                    >
+                      <option value="" disabled className="hidden">Set Status</option>
+                      <option value="Active" disabled={actualStatus === 'Active'} className={getOptionClass('Active')}>Active</option>
+                      <option value="Blocked" disabled={actualStatus === 'Blocked'} className={getOptionClass('Blocked')}>Blocked</option>
+                      <option value="Banned" disabled={actualStatus === 'Banned'} className={getOptionClass('Banned')}>Banned</option>
+                      <option value="Freezed" disabled={actualStatus === 'Freezed'} className={getOptionClass('Freezed')}>Freezed</option>
+                      <option value="Reported" disabled={actualStatus === 'Reported'} className={getOptionClass('Reported')}>Reported</option>
+                    </select>
+                  );
+                })()}
               </div>
 
               <button
                 onClick={handleSaveDrawerChanges}
-                className="w-full sm:w-auto px-4 py-1.5 bg-deep-maroon hover:bg-primary text-xs font-bold text-white rounded-xl cursor-pointer shadow-md transition-all active:scale-95 flex items-center justify-center gap-1.5"
+                disabled={!(drawerVerified !== selectedUser.verified || (drawerStatus !== '' && drawerStatus !== (selectedUser.reported ? 'Reported' : selectedUser.status)))}
+                className={`w-full sm:w-auto px-4 py-1.5 text-xs font-bold text-white rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5 ${
+                  (drawerVerified !== selectedUser.verified || (drawerStatus !== '' && drawerStatus !== (selectedUser.reported ? 'Reported' : selectedUser.status)))
+                    ? 'bg-deep-maroon hover:bg-primary cursor-pointer active:scale-95'
+                    : 'bg-slate-300 cursor-not-allowed opacity-70'
+                }`}
               >
                 <span className="material-symbols-outlined text-xs">save</span>
                 Save
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Custom Alert/Confirm Modal */}
+      {alertModal.isOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div 
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" 
+            onClick={() => setAlertModal({ ...alertModal, isOpen: false })}
+          ></div>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm relative z-10 animate-scale-up overflow-hidden border border-slate-100">
+            <div className="p-6 text-center">
+              {alertModal.type === 'confirm' && (
+                <div className="mx-auto flex items-center justify-center h-14 w-14 rounded-full bg-rose-50 mb-4 border border-rose-100">
+                  <span className="material-symbols-outlined text-rose-500 text-3xl">warning</span>
+                </div>
+              )}
+              {alertModal.type === 'success' && (
+                <div className="mx-auto flex items-center justify-center h-14 w-14 rounded-full bg-emerald-50 mb-4 border border-emerald-100">
+                  <span className="material-symbols-outlined text-emerald-500 text-3xl">check_circle</span>
+                </div>
+              )}
+              {alertModal.type === 'error' && (
+                <div className="mx-auto flex items-center justify-center h-14 w-14 rounded-full bg-amber-50 mb-4 border border-amber-100">
+                  <span className="material-symbols-outlined text-amber-500 text-3xl">error</span>
+                </div>
+              )}
+              <h3 className="text-lg font-bold text-slate-800 mb-2">{alertModal.title}</h3>
+              <p className="text-sm text-slate-500 font-medium leading-relaxed">{alertModal.message}</p>
+            </div>
+            <div className="px-6 py-4 bg-slate-50 flex justify-center gap-3 border-t border-slate-100/60">
+              {alertModal.type === 'confirm' ? (
+                <>
+                  <button
+                    onClick={() => setAlertModal({ ...alertModal, isOpen: false })}
+                    className="flex-1 px-4 py-2 bg-white border border-slate-200 text-slate-650 rounded-xl text-xs font-bold hover:bg-slate-50 transition-colors shadow-sm"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={alertModal.onConfirm}
+                    className="flex-1 px-4 py-2 bg-rose-500 text-white rounded-xl text-xs font-bold shadow-md hover:bg-rose-600 transition-colors shadow-rose-500/20"
+                  >
+                    Confirm Logout
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => setAlertModal({ ...alertModal, isOpen: false })}
+                  className="px-8 py-2 bg-deep-maroon text-white rounded-xl text-xs font-bold shadow-md hover:bg-primary transition-colors shadow-deep-maroon/20"
+                >
+                  OK
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add User Modal */}
+      <AddUserModal 
+        isOpen={showAddUserModal} 
+        onClose={() => setShowAddUserModal(false)} 
+        onSuccess={(msg) => {
+          showToast(msg);
+          fetchCustomers();
+        }}
+        onError={(msg) => {
+          setAlertModal({
+            isOpen: true,
+            type: 'error',
+            title: 'Error',
+            message: msg,
+            onConfirm: null
+          });
+        }}
+      />
+
+      {/* Toast Notification */}
+      {toast.isVisible && (
+        <div className="fixed bottom-6 right-6 z-[70] animate-slide-up flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border bg-slate-800 border-slate-700 text-white">
+          <span className={`material-symbols-outlined ${toast.type === 'success' ? 'text-emerald-400' : 'text-rose-400'}`}>
+            {toast.type === 'success' ? 'check_circle' : 'error'}
+          </span>
+          <span className="text-sm font-bold tracking-wide">{toast.message}</span>
         </div>
       )}
     </div>

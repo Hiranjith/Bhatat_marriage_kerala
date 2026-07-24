@@ -145,7 +145,7 @@ export const updateUserDetailsByProfileId = async (req, res) => {
       SET 
         name = ?, gender = ?, age = ?, height = ?, marital_status = ?,
         profile_created_for = ?, education = ?, profession = ?,
-        country = ?, state = ?, district = ?, place = ?,
+        country = ?, state = ?, district = ?, place = ?, pincode = ?,
         fathers_name = ?, fathers_job = ?, mothers_name = ?, mothers_job = ?,
         sibling_details = ?, about_me = ?, date_of_birth = COALESCE(?, date_of_birth)
     `;
@@ -163,6 +163,7 @@ export const updateUserDetailsByProfileId = async (req, res) => {
       updateData.state || null,
       updateData.district || null,
       updateData.city || null,
+      updateData.pincode || null,
       updateData.fathersName || null,
       updateData.fathersJob || null,
       updateData.mothersName || null,
@@ -209,6 +210,47 @@ export const updateUserDetailsByProfileId = async (req, res) => {
         `UPDATE user_registration SET ${updateFields.join(', ')} WHERE profile_id = ?`,
         updateValues
       );
+    }
+
+    // Head Franchise Logic: Check if pincode is updated
+    if (updateData.pincode) {
+      const pincode = String(updateData.pincode);
+      // Check if any franchise covers this pincode using JSON_CONTAINS
+      // JSON_CONTAINS expects JSON formatted string for the value
+      const [franchises] = await pool.query(
+        `SELECT franchise_id FROM BM_Franchise WHERE JSON_CONTAINS(pin_codes, ?)`,
+        [JSON.stringify(pincode)]
+      );
+
+      if (franchises.length === 0) {
+        // Cancel/delete any existing unassigned requests for this profile
+        await pool.query(
+          `DELETE FROM bm_head_franchise_requests WHERE profile_id = ? AND status = 'Unassigned'`,
+          [profileId]
+        );
+
+        // Generate new REQ id
+        const [latestReq] = await pool.query(
+          `SELECT request_id FROM bm_head_franchise_requests ORDER BY id DESC LIMIT 1`
+        );
+        let nextReqId = 'REQ0001';
+        if (latestReq.length > 0) {
+           const num = parseInt(latestReq[0].request_id.replace('REQ', ''), 10);
+           nextReqId = `REQ${String(num + 1).padStart(4, '0')}`;
+        }
+
+        // Insert new request
+        await pool.query(
+          `INSERT INTO bm_head_franchise_requests (request_id, profile_id, pincode, status) VALUES (?, ?, ?, 'Unassigned')`,
+          [nextReqId, profileId, pincode]
+        );
+      } else {
+        // If pincode exists in a franchise, delete any pending unassigned requests as it's now covered
+        await pool.query(
+          `DELETE FROM bm_head_franchise_requests WHERE profile_id = ? AND status = 'Unassigned'`,
+          [profileId]
+        );
+      }
     }
 
     res.status(200).json({ message: 'Profile updated successfully' });

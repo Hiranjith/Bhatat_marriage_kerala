@@ -23,6 +23,7 @@ export default function MyProfileView({ onProfileUpdate }) {
     state: '',
     district: '',
     city: '',
+    pincode: '',
     birthTime: '',
     janmaSistaDasa: '',
     endDasa: '',
@@ -57,6 +58,7 @@ export default function MyProfileView({ onProfileUpdate }) {
               state: fetchedProfile.state || '',
               district: fetchedProfile.district || '',
               city: fetchedProfile.place || '',
+              pincode: fetchedProfile.pincode || '',
               birthTime: fetchedProfile.birth_time || '',
               janmaSistaDasa: '', // Not in DB schema
               endDasa: '', // Not in DB schema
@@ -159,6 +161,11 @@ export default function MyProfileView({ onProfileUpdate }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!user?.profile_id) return;
+
+    if (!profileData.pincode || profileData.pincode.length !== 6 || !/^\d+$/.test(profileData.pincode)) {
+      alert("Please enter a valid 6-digit PIN code.");
+      return;
+    }
 
     const submitData = { ...profileData };
     if (submitData.dobEnglish && submitData.dobEnglish.includes('/')) {
@@ -430,6 +437,23 @@ export default function MyProfileView({ onProfileUpdate }) {
                   name="city"
                   value={profileData.city}
                   onChange={handleChange} disabled={!isEditing}
+                  className="w-full border border-slate-200 rounded-lg py-1.5 px-2.5 text-[11px] md:text-xs bg-slate-50/50 text-charcoal-text disabled:opacity-60 disabled:bg-slate-100/50 disabled:cursor-not-allowed disabled:border-slate-100 focus:outline-none focus:ring-1 focus:ring-deep-maroon"
+                />
+              </div>
+
+              <div className="col-span-1">
+                <label className="block text-[9px] md:text-[10px] text-slate-400 font-semibold mb-0.5">PIN Code <span className="text-rose-500">*</span></label>
+                <input
+                  type="text"
+                  name="pincode"
+                  value={profileData.pincode}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, '').slice(0, 6);
+                    handleChange({ target: { name: 'pincode', value: val } });
+                  }}
+                  disabled={!isEditing}
+                  required
+                  placeholder="6-digit PIN"
                   className="w-full border border-slate-200 rounded-lg py-1.5 px-2.5 text-[11px] md:text-xs bg-slate-50/50 text-charcoal-text disabled:opacity-60 disabled:bg-slate-100/50 disabled:cursor-not-allowed disabled:border-slate-100 focus:outline-none focus:ring-1 focus:ring-deep-maroon"
                 />
               </div>
