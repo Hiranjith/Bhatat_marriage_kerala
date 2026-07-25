@@ -61,6 +61,7 @@ function App() {
   const location = useLocation();
   const isAdminPath = location.pathname.startsWith('/super-admin') || location.pathname.startsWith('/admin');
 
+  /*
   useEffect(() => {
     // Prevent right-click context menu
     const handleContextMenu = (e) => {
@@ -111,6 +112,7 @@ function App() {
       document.removeEventListener('dragstart', handleDragStart);
     };
   }, []);
+  */
 
   const routeContent = (
     <>

@@ -71,7 +71,7 @@ export default function SuperAdminDashboard() {
                                     Total Users
                                 </span>
                                 <div className="flex items-center justify-between gap-1 mt-2 sm:mt-3">
-                                    <p className="text-sm sm:text-2xl font-black text-slate-800">{metrics.totalUsers.toLocaleString()}</p>
+                                    <p className="text-sm sm:text-2xl font-black text-slate-800">{metrics?.totalUsers?.toLocaleString() || 0}</p>
                                 </div>
                             </div>
 
@@ -80,7 +80,7 @@ export default function SuperAdminDashboard() {
                                     Staff Members
                                 </span>
                                 <div className="flex items-center justify-between gap-1 mt-2 sm:mt-3">
-                                    <p className="text-sm sm:text-2xl font-black text-slate-800">{metrics.totalStaffs}</p>
+                                    <p className="text-sm sm:text-2xl font-black text-slate-800">{metrics?.totalStaffs || 0}</p>
                                 </div>
                             </div>
 
@@ -89,7 +89,7 @@ export default function SuperAdminDashboard() {
                                     Monthly Revenue
                                 </span>
                                 <div className="flex items-center justify-between gap-1 mt-2 sm:mt-3">
-                                    <p className="text-sm sm:text-2xl font-black text-emerald-600">{metrics.monthlyRevenue}</p>
+                                    <p className="text-sm sm:text-2xl font-black text-emerald-600">{metrics?.monthlyRevenue || '₹0'}</p>
                                 </div>
                             </div>
                         </div>

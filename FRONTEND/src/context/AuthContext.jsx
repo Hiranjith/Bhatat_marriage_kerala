@@ -17,8 +17,16 @@ export const AuthProvider = ({ children }) => {
     const savedUser = localStorage.getItem('user');
     const token = localStorage.getItem('accessToken');
     
-    if (savedUser && token) {
-      setUser(JSON.parse(savedUser));
+    if (savedUser && token && savedUser !== 'undefined' && token !== 'undefined') {
+      try {
+        setUser(JSON.parse(savedUser));
+      } catch (e) {
+        console.error('Failed to parse user from local storage', e);
+        localStorage.removeItem('user');
+        localStorage.removeItem('accessToken');
+        setLoading(false);
+        return;
+      }
       
       // Verify session with backend immediately on mount/navigation
       verifySession();

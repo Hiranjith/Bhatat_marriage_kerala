@@ -20,6 +20,10 @@ export default function Login() {
 
       const { accessToken, user } = response.data;
       
+      if (!accessToken || !user) {
+        throw new Error('Invalid response from server. Are you sure the API is running and accessible?');
+      }
+      
       localStorage.setItem('accessToken', accessToken);
       localStorage.setItem('isLoggedIn', 'true');
       login(user);
@@ -27,7 +31,7 @@ export default function Login() {
       navigate('/dashboard');
     } catch (error) {
       console.error('Login Error:', error);
-      alert(error.response?.data?.error || 'Login failed. Please check your credentials.');
+      alert(error.response?.data?.error || error.message || 'Login failed. Please check your credentials.');
     } finally {
       setLoading(false);
     }

@@ -5,13 +5,19 @@ export default function SuperAdminLogin() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    localStorage.setItem('adminRole', 'superadmin');
-    localStorage.setItem('isAdminLoggedIn', 'true');
-    navigate('/super-admin/dashboard');
+    setError('');
+    if (username === 'superadmin@gmail.com' && password === 'superadmin') {
+      localStorage.setItem('adminRole', 'superadmin');
+      localStorage.setItem('isAdminLoggedIn', 'true');
+      navigate('/super-admin/dashboard');
+    } else {
+      setError('Invalid username or password');
+    }
   };
 
   return (
@@ -31,6 +37,11 @@ export default function SuperAdminLogin() {
 
         <div className="p-6 sm:p-8">
           <form onSubmit={handleSubmit} className="space-y-4 text-left">
+            {error && (
+              <div className="text-red-600 bg-red-50 text-xs font-bold p-2 rounded-lg text-center border border-red-100">
+                {error}
+              </div>
+            )}
             <div>
               <label className="block text-[10px] sm:text-xs font-bold uppercase tracking-wider text-charcoal-text/70 mb-1.5">
                 Username / Email
