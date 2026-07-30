@@ -3,18 +3,28 @@ import multer from 'multer';
 import path from 'path';
 import { 
   getUserDetailsByProfileId, 
-  updateUserDetailsByProfileId,
-  getPlanetaryPositions,
-  updatePlanetaryPositions,
-  uploadUserPhoto,
-  deleteUserPhoto,
-  getUserPhotos,
-  getPartnerPreferences,
-  updatePartnerPreferences,
-  updateUserSettings,
-  resetPassword,
-  getProfileCompletion
-} from '../controllers/userController.js';
+  updateUserDetailsByProfileId 
+} from '../controllers/user/userDetailsController.js';
+import { 
+  getPlanetaryPositions, 
+  updatePlanetaryPositions 
+} from '../controllers/user/planetaryPositionsController.js';
+import { 
+  getUserPhotos, 
+  uploadUserPhoto, 
+  deleteUserPhoto 
+} from '../controllers/user/userPhotosController.js';
+import { 
+  getPartnerPreferences, 
+  updatePartnerPreferences 
+} from '../controllers/user/partnerPreferenceController.js';
+import { 
+  updateUserSettings, 
+  resetPassword 
+} from '../controllers/user/accountSettingsController.js';
+import { 
+  getProfileCompletion 
+} from '../controllers/user/profileCompletionController.js';
 import { verifyUserSession } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();

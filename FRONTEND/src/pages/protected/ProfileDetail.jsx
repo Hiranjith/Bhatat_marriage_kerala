@@ -204,7 +204,7 @@ export default function ProfileDetails() {
   const locationDetails = [
     ['Country', profile.country || 'India'],
     ['State', profile.state],
-    ['District', profile.district || 'Thrissur'],
+    ['District', profile.district ? profile.district.replace(/^\d{2}-\s*/, '') : 'Thrissur'],
     ['City', profile.location],
   ];
 

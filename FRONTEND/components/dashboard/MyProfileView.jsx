@@ -56,7 +56,7 @@ export default function MyProfileView({ onProfileUpdate }) {
               profession: fetchedProfile.profession || '',
               country: fetchedProfile.country || '',
               state: fetchedProfile.state || '',
-              district: fetchedProfile.district || '',
+              district: fetchedProfile.district ? fetchedProfile.district.replace(/^\d{2}-\s*/, '') : '',
               city: fetchedProfile.place || '',
               pincode: fetchedProfile.pincode || '',
               birthTime: fetchedProfile.birth_time || '',

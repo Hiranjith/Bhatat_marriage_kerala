@@ -119,8 +119,8 @@ export const register = async (req, res) => {
     }
     
     await pool.query(
-      `INSERT INTO ${matchingTable} (profile_id, name, gender, age) VALUES (?, ?, ?, ?)`,
-      [profileId, full_name, gender, age]
+      `INSERT INTO ${matchingTable} (profile_id, name, gender, age, district) VALUES (?, ?, ?, ?, ?)`,
+      [profileId, full_name, gender, age, district]
     );
 
     // 6. Set refresh token in HTTP-only cookie
@@ -144,8 +144,8 @@ export const register = async (req, res) => {
       const mailOptions = {
         from: process.env.SMTP_USER,
         to: email_address,
-        subject: 'Welcome! Your Account Password',
-        text: `Hello ${full_name},\n\nYour account has been successfully created.\n\nYour generated password is: ${plainPassword}\n\nYou can use this password to log in. We recommend updating your password after your first login.\n\nBest Regards,\nBharat Marriage`
+        subject: 'Welcome! Your Account Details',
+        text: `Hello ${full_name},\n\nYour account has been successfully created.\n\nYour User ID is: ${profileId}\nYour generated password is: ${plainPassword}\n\nYou can use your email address or mobile number to log in. We recommend updating your password after your first login.\n\nBest Regards,\nBharat Marriage`
       };
 
       try {

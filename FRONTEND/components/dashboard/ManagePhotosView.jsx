@@ -2,6 +2,57 @@ import React, { useState, useEffect } from 'react';
 import axiosInstance from '../../src/utils/axiosInstance';
 import { useAuth } from '../../src/context/AuthContext';
 
+const applyWatermark = (file) => {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        
+        // Draw original image
+        ctx.drawImage(img, 0, 0);
+        
+        // Set up watermark text
+        const text = "Bharath Marriage";
+        
+        // Calculate the visible width of the image when displayed in a 3:4 aspect ratio container with object-cover.
+        // This ensures the watermark takes up exactly the same visual percentage of the container regardless of image aspect ratio or resolution.
+        const visibleWidth = Math.min(img.width, img.height * (3 / 4));
+        const fontSize = Math.floor(visibleWidth / 10);
+        ctx.font = `bold ${fontSize}px sans-serif`;
+        ctx.fillStyle = "rgba(255, 255, 255, 0.5)"; // Semi-transparent white
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        
+        // Add shadow for better visibility on both light and dark backgrounds
+        ctx.shadowColor = "rgba(0, 0, 0, 0.5)";
+        ctx.shadowBlur = 5;
+        ctx.shadowOffsetX = 2;
+        ctx.shadowOffsetY = 2;
+        
+        // Draw rotated text at the center
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.rotate(-Math.PI / 6); // -30 degrees
+        ctx.fillText(text, 0, 0);
+        
+        canvas.toBlob((blob) => {
+          const watermarkedFile = new File([blob], file.name, {
+            type: file.type,
+            lastModified: Date.now(),
+          });
+          resolve(watermarkedFile);
+        }, file.type, 0.9);
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+};
+
 export default function ManagePhotosView({ onProfileUpdate }) {
   const { user, updateUser } = useAuth();
   const profileId = user?.profile_id;
@@ -32,8 +83,10 @@ export default function ManagePhotosView({ onProfileUpdate }) {
   const handleFileUpload = async (slotId, file) => {
     if (!file || !profileId) return;
 
+    const watermarkedFile = await applyWatermark(file);
+
     const formData = new FormData();
-    formData.append('photo', file);
+    formData.append('photo', watermarkedFile);
     formData.append('slot', slotId);
 
     try {

@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../src/utils/axiosInstance';
 
 export default function HeroRegistrationForm({ onClose } = {}) {
+  const navigate = useNavigate();
+  const [toast, setToast] = useState({ isVisible: false, message: '', type: 'success' });
   const [fullName, setFullName] = useState('');
   const [gender, setGender] = useState('Male');
   const [community, setCommunity] = useState('');
@@ -20,12 +23,13 @@ export default function HeroRegistrationForm({ onClose } = {}) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!dobDay || !dobMonth || !dobYear) {
-      alert('Please select your Date of Birth');
+      setToast({ isVisible: true, message: 'Please select your Date of Birth', type: 'error' });
+      setTimeout(() => setToast({ isVisible: false, message: '', type: 'success' }), 3000);
       return;
     }
-    
+
     const dobString = `${dobDay} ${dobMonth} ${dobYear}`;
-    
+
     const payload = {
       full_name: fullName,
       country_code: '+91',
@@ -40,12 +44,29 @@ export default function HeroRegistrationForm({ onClose } = {}) {
     try {
       setLoading(true);
       const response = await axiosInstance.post('/auth/register', payload);
-      alert('Registration successful!');
-      if (onClose) onClose();
-      // Optional: Redirect or clear form here
+      setToast({ isVisible: true, message: 'Registration successful!', type: 'success' });
+
+      // Clear form
+      setFullName('');
+      setGender('Male');
+      setCommunity('');
+      setPhone('');
+      setEmail('');
+      setDistrict('');
+      setDobDay('');
+      setDobMonth('');
+      setDobYear('');
+      setTermsAccepted(false);
+
+      setTimeout(() => {
+        setToast({ isVisible: false, message: '', type: 'success' });
+        if (onClose) onClose();
+        navigate('/login');
+      }, 2000);
     } catch (error) {
       console.error('Registration failed:', error);
-      alert(error.response?.data?.error || 'Registration failed. Please try again.');
+      setToast({ isVisible: true, message: error.response?.data?.error || 'Registration failed. Please try again.', type: 'error' });
+      setTimeout(() => setToast({ isVisible: false, message: '', type: 'success' }), 3000);
     } finally {
       setLoading(false);
     }
@@ -143,7 +164,7 @@ export default function HeroRegistrationForm({ onClose } = {}) {
             <option value="Hindu">Hindu</option>
             <option value="Christian">Christian</option>
             <option value="Muslim">Muslim</option>
-            <option value="Sikh">Sikh</option>
+            <option value="Other">Other</option>
           </select>
 
           {/* DOB Picker */}
@@ -151,11 +172,10 @@ export default function HeroRegistrationForm({ onClose } = {}) {
             <button
               type="button"
               onClick={() => setShowDobPicker(!showDobPicker)}
-              className={`w-full flex items-center justify-between gap-1 border rounded-lg py-1.5 px-2 text-[10px] bg-white text-charcoal-text hover:bg-slate-50 cursor-pointer h-full min-h-[32px] ${
-                dobDay && dobMonth && dobYear
-                  ? 'border-deep-maroon font-semibold text-deep-maroon'
-                  : 'border-surface-variant text-soft-gray'
-              }`}
+              className={`w-full flex items-center justify-between gap-1 border rounded-lg py-1.5 px-2 text-[10px] bg-white text-charcoal-text hover:bg-slate-50 cursor-pointer h-full min-h-[32px] ${dobDay && dobMonth && dobYear
+                ? 'border-deep-maroon font-semibold text-deep-maroon'
+                : 'border-surface-variant text-soft-gray'
+                }`}
             >
               <span className="flex items-center gap-1 overflow-hidden truncate">
                 <span className="material-symbols-outlined text-[13px] text-soft-gray">calendar_month</span>
@@ -201,7 +221,7 @@ export default function HeroRegistrationForm({ onClose } = {}) {
                       className="w-full border border-slate-200 rounded-md py-1 px-1.5 text-[10px] bg-slate-50 text-charcoal-text focus:outline-none focus:ring-1 focus:ring-deep-maroon"
                     >
                       <option value="">Month</option>
-                      {['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'].map((m) => (
+                      {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map((m) => (
                         <option key={m} value={m}>{m}</option>
                       ))}
                     </select>
@@ -238,11 +258,10 @@ export default function HeroRegistrationForm({ onClose } = {}) {
           <button
             type="button"
             onClick={() => setGender('Male')}
-            className={`flex items-center justify-center gap-1 border rounded-lg py-1.5 px-1 text-[10px] cursor-pointer transition-all ${
-              gender === 'Male'
-                ? 'border-deep-maroon text-deep-maroon bg-deep-maroon/5 font-semibold'
-                : 'border-surface-variant text-soft-gray bg-white hover:bg-slate-50'
-            }`}
+            className={`flex items-center justify-center gap-1 border rounded-lg py-1.5 px-1 text-[10px] cursor-pointer transition-all ${gender === 'Male'
+              ? 'border-deep-maroon text-deep-maroon bg-deep-maroon/5 font-semibold'
+              : 'border-surface-variant text-soft-gray bg-white hover:bg-slate-50'
+              }`}
           >
             <span
               className="material-symbols-outlined text-[14px] leading-none"
@@ -255,11 +274,10 @@ export default function HeroRegistrationForm({ onClose } = {}) {
           <button
             type="button"
             onClick={() => setGender('Female')}
-            className={`flex items-center justify-center gap-1 border rounded-lg py-1.5 px-1 text-[10px] cursor-pointer transition-all ${
-              gender === 'Female'
-                ? 'border-deep-maroon text-deep-maroon bg-deep-maroon/5 font-semibold'
-                : 'border-surface-variant text-soft-gray bg-white hover:bg-slate-50'
-            }`}
+            className={`flex items-center justify-center gap-1 border rounded-lg py-1.5 px-1 text-[10px] cursor-pointer transition-all ${gender === 'Female'
+              ? 'border-deep-maroon text-deep-maroon bg-deep-maroon/5 font-semibold'
+              : 'border-surface-variant text-soft-gray bg-white hover:bg-slate-50'
+              }`}
           >
             <span
               className="material-symbols-outlined text-[14px] leading-none"
@@ -308,6 +326,16 @@ export default function HeroRegistrationForm({ onClose } = {}) {
           </a>
         </div>
       </form>
+
+      {/* Toast Notification */}
+      {toast.isVisible && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[100] animate-fade-in flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-xl border bg-slate-800 border-slate-700 text-white min-w-[280px] justify-center">
+          <span className={`material-symbols-outlined ${toast.type === 'success' ? 'text-emerald-400' : 'text-rose-400'}`}>
+            {toast.type === 'success' ? 'check_circle' : 'error'}
+          </span>
+          <span className="text-sm font-bold tracking-wide">{toast.message}</span>
+        </div>
+      )}
     </div>
   );
 }
