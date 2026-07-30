@@ -166,6 +166,9 @@ export default function StaffManagment() {
           <h2 className="text-lg sm:text-xl font-bold text-slate-800 flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-deep-maroon"></span>
             Staff Management
+            <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 text-[10px] uppercase tracking-wider ml-1">
+              {staffList.length} Registered
+            </span>
           </h2>
           <p className="text-xs text-slate-500 mt-1">
             Create staff credentials, assign them to a franchise, and manage system permissions.

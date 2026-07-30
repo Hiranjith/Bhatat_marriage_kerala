@@ -565,12 +565,12 @@ export default function UserManagement() {
                       onChange={(e) => setDrawerStatus(e.target.value)}
                       className="w-full border border-slate-350 rounded-xl py-1.5 px-3 bg-white text-xs font-bold text-slate-700 focus:outline-none"
                     >
-                      <option value="" disabled className="hidden">Set Status</option>
-                      <option value="Active" disabled={actualStatus === 'Active'} className={getOptionClass('Active')}>Active</option>
-                      <option value="Blocked" disabled={actualStatus === 'Blocked'} className={getOptionClass('Blocked')}>Blocked</option>
-                      <option value="Banned" disabled={actualStatus === 'Banned'} className={getOptionClass('Banned')}>Banned</option>
-                      <option value="Freezed" disabled={actualStatus === 'Freezed'} className={getOptionClass('Freezed')}>Freezed</option>
-                      <option value="Reported" disabled={actualStatus === 'Reported'} className={getOptionClass('Reported')}>Reported</option>
+                      <option value="" disabled className="hidden">Action</option>
+                      <option value="Active" disabled={actualStatus === 'Active'} className={getOptionClass('Active')}>Activate</option>
+                      <option value="Blocked" disabled={actualStatus === 'Blocked'} className={getOptionClass('Blocked')}>Block</option>
+                      <option value="Banned" disabled={actualStatus === 'Banned'} className={getOptionClass('Banned')}>Ban</option>
+                      <option value="Freezed" disabled={actualStatus === 'Freezed'} className={getOptionClass('Freezed')}>Freeze</option>
+                      <option value="Reported" disabled={actualStatus === 'Reported'} className={getOptionClass('Reported')}>Report</option>
                     </select>
                   );
                 })()}

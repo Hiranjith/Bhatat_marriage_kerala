@@ -53,6 +53,8 @@ export const getDashboardMetrics = async (req, res) => {
 
     const [rows] = await pool.execute(baseQuery, queryParams);
     
+    const [staffRows] = await pool.execute('SELECT COUNT(*) as totalStaffs FROM BM_Staff_data');
+
     res.status(200).json({
       totalUsers: parseInt(rows[0].totalUsers) || 0,
       activeUsers: parseInt(rows[0].activeUsers) || 0,
@@ -60,7 +62,7 @@ export const getDashboardMetrics = async (req, res) => {
       bannedUsers: parseInt(rows[0].bannedUsers) || 0,
       freezedUsers: parseInt(rows[0].freezedUsers) || 0,
       reportedUsers: parseInt(rows[0].reportedUsers) || 0,
-      totalStaffs: 6,
+      totalStaffs: parseInt(staffRows[0].totalStaffs) || 0,
       monthlyRevenue: '₹1.84L'
     });
   } catch (error) {
