@@ -1,5 +1,5 @@
 import express from 'express';
-import { register, login, refreshToken, logout, forgotPassword, getMe } from '../controllers/authController.js';
+import { register, login, refreshToken, logout, forgotPassword, getMe, superAdminLogin } from '../controllers/authController.js';
 import { verifyUserSession } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
@@ -12,5 +12,8 @@ router.post('/forgot-password', forgotPassword);
 
 // Verify active session
 router.get('/me', verifyUserSession, getMe);
+
+// Admin Login
+router.post('/admin-login', superAdminLogin);
 
 export default router;

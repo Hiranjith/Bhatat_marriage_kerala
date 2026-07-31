@@ -373,3 +373,37 @@ export const forgotPassword = async (req, res) => {
     res.status(500).json({ error: 'Server error during password reset' });
   }
 };
+
+export const superAdminLogin = async (req, res) => {
+  const identifier = req.body.identifier || req.body.email || req.body.email_address;
+  const { password } = req.body;
+
+  try {
+    if (!identifier || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
+    }
+
+    if (
+      identifier === process.env.SUPER_ADMIN_ID &&
+      password === process.env.SUPER_ADMIN_PASSWORD
+    ) {
+      // Generate a JWT for the admin
+      const token = jwt.sign(
+        { id: identifier, role: 'superadmin' },
+        process.env.JWT_ACCESS_SECRET,
+        { expiresIn: '12h' } // longer session for admin is usually okay, or keep it short
+      );
+
+      return res.status(200).json({
+        message: 'Super Admin Login successful',
+        accessToken: token,
+        user: { role: 'superadmin', email: identifier }
+      });
+    }
+
+    return res.status(401).json({ error: 'Invalid admin credentials' });
+  } catch (error) {
+    console.error('Super Admin Login Error:', error);
+    res.status(500).json({ error: 'Server error during admin login' });
+  }
+};

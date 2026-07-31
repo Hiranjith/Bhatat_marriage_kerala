@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axiosInstance from '../../utils/axiosInstance';
 
 export default function SuperAdminLogin() {
   const [username, setUsername] = useState('');
@@ -8,15 +9,24 @@ export default function SuperAdminLogin() {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    if (username === 'superadmin@gmail.com' && password === 'superadmin') {
-      localStorage.setItem('adminRole', 'superadmin');
-      localStorage.setItem('isAdminLoggedIn', 'true');
-      navigate('/super-admin/dashboard');
-    } else {
-      setError('Invalid username or password');
+    
+    try {
+      const response = await axiosInstance.post('/auth/admin-login', { 
+        identifier: username, 
+        password 
+      });
+
+      if (response.data.accessToken) {
+        localStorage.setItem('accessToken', response.data.accessToken);
+        localStorage.setItem('adminRole', 'superadmin');
+        localStorage.setItem('isAdminLoggedIn', 'true');
+        navigate('/super-admin/dashboard');
+      }
+    } catch (err) {
+      setError(err.response?.data?.error || 'Invalid username or password');
     }
   };
 

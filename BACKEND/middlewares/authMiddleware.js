@@ -34,3 +34,30 @@ export const verifyUserSession = async (req, res, next) => {
     return res.status(401).json({ error: 'Invalid token.' });
   }
 };
+
+export const verifyAdminSession = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Access denied. No token provided.' });
+    }
+
+    const token = authHeader.split(' ')[1];
+    
+    // Verify token
+    const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
+    
+    // Check if the role is superadmin
+    if (decoded.role !== 'superadmin') {
+      return res.status(403).json({ error: 'Forbidden. Admin access required.' });
+    }
+
+    req.admin = decoded;
+    next();
+  } catch (error) {
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ error: 'Admin token expired', isExpired: true });
+    }
+    return res.status(401).json({ error: 'Invalid admin token.' });
+  }
+};
