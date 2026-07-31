@@ -13,12 +13,15 @@ export const verifyUserSession = async (req, res, next) => {
     // 1. Verify the JWT signature and expiration
     const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
     
-    // 2. Check the database to see if the session was invalidated (Force Logout)
-    // We check if refresh_token is NULL or empty
-    const [users] = await pool.query('SELECT refresh_token FROM user_registration WHERE id = ?', [decoded.id]);
+    // 2. Check the database to see if the session was invalidated (Force Logout) or Account Banned
+    const [users] = await pool.query('SELECT refresh_token, status FROM user_registration WHERE id = ?', [decoded.id]);
     
     if (users.length === 0 || !users[0].refresh_token) {
       return res.status(401).json({ error: 'Session expired or forcefully logged out.' });
+    }
+
+    if (users[0].status === 'BANNED' || users[0].status === 'Banned') {
+      return res.status(403).json({ error: 'Your account has been banned. Please contact support.' });
     }
 
     // 3. User is fully authenticated and session is valid

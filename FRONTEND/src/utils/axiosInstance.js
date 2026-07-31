@@ -46,6 +46,18 @@ axiosInstance.interceptors.response.use(
       return Promise.reject(error);
     }
 
+    if (error.response && error.response.status === 403 && error.response.data?.error?.toLowerCase().includes('banned')) {
+      // Clear local storage and redirect to banned page
+      localStorage.removeItem('user');
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('isLoggedIn');
+      
+      if (window.location.pathname !== '/banned') {
+        window.location.href = '/banned';
+      }
+      return Promise.reject(error);
+    }
+
     if (error.response && error.response.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 

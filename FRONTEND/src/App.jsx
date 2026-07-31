@@ -12,6 +12,7 @@ import Contact from './pages/contact';
 import Packages from './pages/Packages';
 import ForgotPassword from './pages/ForgotPassword';
 import PasswordSent from './pages/PasswordSent';
+import Banned from './pages/Banned';
 
 // Admin / Super Admin Page Imports
 import SuperAdminLogin from './admin/superAdmin/Login';
@@ -124,6 +125,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/password-sent" element={<PasswordSent />} />
+        <Route path="/banned" element={<Banned />} />
         <Route path="/dashboard" element={<UserProtectedRoute><Dashboard /></UserProtectedRoute>} />
         <Route path="/profile/:profileId" element={<UserProtectedRoute><ProfileDetails /></UserProtectedRoute>} />
         <Route path="/porutham" element={<Porutham />} />

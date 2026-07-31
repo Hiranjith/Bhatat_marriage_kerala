@@ -9,6 +9,7 @@ export default function HeroRegistrationForm({ onClose } = {}) {
   const [gender, setGender] = useState('Male');
   const [community, setCommunity] = useState('');
   const [phone, setPhone] = useState('');
+  const [phoneError, setPhoneError] = useState('');
   const [email, setEmail] = useState('');
   const [district, setDistrict] = useState('');
   const [loading, setLoading] = useState(false);
@@ -22,6 +23,13 @@ export default function HeroRegistrationForm({ onClose } = {}) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (phone.length !== 10 || !/^\d{10}$/.test(phone)) {
+      setToast({ isVisible: true, message: 'Please enter a valid 10-digit mobile number', type: 'error' });
+      setTimeout(() => setToast({ isVisible: false, message: '', type: 'success' }), 3000);
+      return;
+    }
+
     if (!dobDay || !dobMonth || !dobYear) {
       setToast({ isVisible: true, message: 'Please select your Date of Birth', type: 'error' });
       setTimeout(() => setToast({ isVisible: false, message: '', type: 'success' }), 3000);
@@ -96,27 +104,44 @@ export default function HeroRegistrationForm({ onClose } = {}) {
           <input
             type="text"
             value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
+            onChange={(e) => setFullName(e.target.value.replace(/\d/g, ''))}
             className="w-full border border-surface-variant rounded-lg py-1.5 px-2.5 text-[11px] font-body-sm bg-white text-charcoal-text focus:outline-none focus:ring-1 focus:ring-deep-maroon focus:border-deep-maroon placeholder-soft-gray/60"
             placeholder="Full Name"
             required
           />
-          <div className="flex items-center border border-surface-variant rounded-lg bg-white overflow-hidden focus-within:ring-1 focus-within:ring-deep-maroon focus-within:border-deep-maroon">
-            <div className="flex items-center gap-0.5 px-2 py-1 bg-white select-none border-r border-surface-variant/60 cursor-pointer">
-              <span className="text-xs">🇮🇳</span>
-              <span className="text-[10px] text-charcoal-text font-medium ml-0.5">+91</span>
-              <span className="material-symbols-outlined text-[10px] text-soft-gray leading-none">
-                keyboard_arrow_down
-              </span>
+          <div>
+            <div className={`flex items-center border ${phoneError ? 'border-red-500' : 'border-surface-variant'} rounded-lg bg-white overflow-hidden focus-within:ring-1 ${phoneError ? 'focus-within:ring-red-500 focus-within:border-red-500' : 'focus-within:ring-deep-maroon focus-within:border-deep-maroon'}`}>
+              <div className="flex items-center gap-0.5 px-2 py-1 bg-white select-none border-r border-surface-variant/60 cursor-pointer">
+                <span className="text-xs">🇮🇳</span>
+                <span className="text-[10px] text-charcoal-text font-medium ml-0.5">+91</span>
+                <span className="material-symbols-outlined text-[10px] text-soft-gray leading-none">
+                  keyboard_arrow_down
+                </span>
+              </div>
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, '');
+                  setPhone(val);
+                  if (val.length === 10) setPhoneError('');
+                }}
+                onBlur={() => {
+                  if (phone.length > 0 && phone.length !== 10) {
+                    setPhoneError('Please enter 10 digit mobile number');
+                  } else {
+                    setPhoneError('');
+                  }
+                }}
+                maxLength="10"
+                pattern="\d{10}"
+                className="w-full border-none py-1.5 px-2 text-[11px] font-body-sm bg-white text-charcoal-text placeholder-soft-gray/60 focus:ring-0 focus:outline-none"
+                placeholder="Mobile Number"
+                title="Please enter a valid 10-digit mobile number"
+                required
+              />
             </div>
-            <input
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="w-full border-none py-1.5 px-2 text-[11px] font-body-sm bg-white text-charcoal-text placeholder-soft-gray/60 focus:ring-0 focus:outline-none"
-              placeholder="Mobile Number"
-              required
-            />
+            {phoneError && <p className="text-red-500 text-[9px] mt-0.5 ml-1 font-medium">{phoneError}</p>}
           </div>
         </div>
 

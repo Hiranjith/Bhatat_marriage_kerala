@@ -12,6 +12,10 @@ export default function UserManagement() {
   const [genderFilter, setGenderFilter] = useState('All');
   const [selectedUser, setSelectedUser] = useState(null);
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalUsers, setTotalUsers] = useState(0);
+
   // Local drawer state for tracking changes before Save
   const [drawerVerified, setDrawerVerified] = useState(false);
   const [drawerStatus, setDrawerStatus] = useState('');
@@ -53,6 +57,8 @@ export default function UserManagement() {
       if (searchQuery) params.append('search', searchQuery);
       if (genderFilter !== 'All') params.append('gender', genderFilter);
       if (statusFilter !== 'All') params.append('status', statusFilter);
+      params.append('page', currentPage);
+      params.append('limit', 10);
       
       const adminFranchise = localStorage.getItem('adminFranchise');
       if (adminFranchise) params.append('franchise_id', adminFranchise);
@@ -87,7 +93,12 @@ export default function UserManagement() {
         };
       });
       
-      setUsers(mappedUsers);
+      setUsers(mappedUsers.sort((a, b) => a.name.localeCompare(b.name)));
+      
+      if (response.data.pagination) {
+        setTotalPages(response.data.pagination.totalPages);
+        setTotalUsers(response.data.pagination.total);
+      }
       
       setSelectedUser(prevSelected => {
         if (prevSelected) {
@@ -114,13 +125,18 @@ export default function UserManagement() {
       fetchCustomers();
     }, 300);
     return () => clearTimeout(delayDebounceFn);
-  }, [searchQuery, statusFilter, genderFilter]);
+  }, [searchQuery, statusFilter, genderFilter, currentPage]);
 
   useEffect(() => {
     const pollInterval = setInterval(() => {
       fetchCustomers(true);
     }, 15000);
     return () => clearInterval(pollInterval);
+  }, [searchQuery, statusFilter, genderFilter, currentPage]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
   }, [searchQuery, statusFilter, genderFilter]);
 
   const handleOpenDetails = (user) => {
@@ -268,10 +284,8 @@ export default function UserManagement() {
             >
               <option value="All">All Profiles</option>
               <option value="Active">Active</option>
-              <option value="Blocked">Blocked</option>
               <option value="Banned">Banned</option>
               <option value="Freezed">Freezed</option>
-              <option value="Reported">Reported Accounts</option>
             </select>
           </div>
         </div>
@@ -404,6 +418,30 @@ export default function UserManagement() {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Pagination Controls */}
+        <div className="p-4 border-t border-slate-200/60 flex items-center justify-between bg-slate-50/30 rounded-b-2xl">
+          <span className="text-xs text-deep-maroon font-semibold">
+            Showing <span className="font-bold">{users.length > 0 ? (currentPage - 1) * 10 + 1 : 0}</span> to <span className="font-bold">{Math.min(currentPage * 10, totalUsers)}</span> of <span className="font-bold">{totalUsers}</span> users
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-1.5 text-xs font-bold rounded-lg text-white bg-deep-maroon hover:bg-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Previous
+            </button>
+            <span className="text-xs font-bold text-deep-maroon px-2">Page {currentPage} of {totalPages || 1}</span>
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages || totalPages === 0}
+              className="px-3 py-1.5 text-xs font-bold rounded-lg text-white bg-deep-maroon hover:bg-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Next
+            </button>
+          </div>
         </div>
       </div>
 
@@ -568,12 +606,10 @@ export default function UserManagement() {
                       onChange={(e) => setDrawerStatus(e.target.value)}
                       className="w-full border border-slate-350 rounded-xl py-1.5 px-3 bg-white text-xs font-bold text-slate-700 focus:outline-none"
                     >
-                      <option value="" disabled className="hidden">Set Status</option>
-                      <option value="Active" disabled={actualStatus === 'Active'} className={getOptionClass('Active')}>Active</option>
-                      <option value="Blocked" disabled={actualStatus === 'Blocked'} className={getOptionClass('Blocked')}>Blocked</option>
-                      <option value="Banned" disabled={actualStatus === 'Banned'} className={getOptionClass('Banned')}>Banned</option>
+                      <option value="" disabled className="hidden">Action</option>
+                      <option value="Active" disabled={actualStatus === 'Active'} className={getOptionClass('Active')}>Activate</option>
+                      <option value="Banned" disabled={actualStatus === 'Banned'} className={getOptionClass('Banned')}>Ban</option>
                       <option value="Freezed" disabled={actualStatus === 'Freezed'} className={getOptionClass('Freezed')}>Freezed</option>
-                      <option value="Reported" disabled={actualStatus === 'Reported'} className={getOptionClass('Reported')}>Reported</option>
                     </select>
                   );
                 })()}

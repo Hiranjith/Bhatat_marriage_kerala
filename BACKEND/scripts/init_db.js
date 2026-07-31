@@ -43,6 +43,7 @@ const initDB = async () => {
         photo_3 VARCHAR(255) DEFAULT NULL,
         photo_4 VARCHAR(255) DEFAULT NULL,
         refresh_token VARCHAR(255),
+        account_status ENUM('Active', 'Banned') DEFAULT 'Active',
         verification ENUM('VERIFIED', 'UNVERIFIED') DEFAULT 'UNVERIFIED',
         plan ENUM('GOLD', 'PREMIUM', 'FREE', 'SILVER') DEFAULT 'FREE',
         status ENUM('ACTIVE', 'BLOCKED', 'BANNED', 'FREEZED', 'REPORTED') DEFAULT 'ACTIVE',

@@ -31,7 +31,15 @@ export default function Login() {
       navigate('/dashboard');
     } catch (error) {
       console.error('Login Error:', error);
-      alert(error.response?.data?.error || error.message || 'Login failed. Please check your credentials.');
+      
+      const status = error.response?.status;
+      const message = error.response?.data?.error || '';
+      
+      if (status === 403 && message.toLowerCase().includes('banned')) {
+        navigate('/banned');
+      } else {
+        alert(message || error.message || 'Login failed. Please check your credentials.');
+      }
     } finally {
       setLoading(false);
     }

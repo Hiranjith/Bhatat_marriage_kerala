@@ -189,6 +189,10 @@ export const login = async (req, res) => {
 
     const user = users[0];
 
+    if (user.account_status === 'Banned' || user.status === 'Banned' || user.status === 'BANNED' || user.status === 'banned') {
+      return res.status(403).json({ error: 'Your account has been banned. Please contact support.' });
+    }
+
     // 2. Verify password
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) {

@@ -7,6 +7,7 @@ const isValidPincode = (val) => /^\d{6}$/.test(val.trim());
 export default function FranchiseManagement() {
   const [franchiseList, setFranchiseList] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     fetchFranchises();
@@ -199,6 +200,11 @@ export default function FranchiseManagement() {
 
   const activeCount = franchiseList.filter(f => f.status === 'Active').length;
 
+  const sortedFranchiseList = [...franchiseList].sort((a, b) => a.name.localeCompare(b.name));
+  const totalFranchises = sortedFranchiseList.length;
+  const totalPages = Math.ceil(totalFranchises / 10);
+  const paginatedFranchises = sortedFranchiseList.slice((currentPage - 1) * 10, currentPage * 10);
+
   return (
     <div className="space-y-6 min-w-0">
       {/* Header Panel */}
@@ -268,7 +274,7 @@ export default function FranchiseManagement() {
                   </td>
                 </tr>
               ) : (
-                franchiseList.map((franchise) => (
+                paginatedFranchises.map((franchise) => (
                   <tr key={franchise.id} className="hover:bg-slate-50/50 transition-colors">
                     <td className="py-3 px-2.5 font-bold text-slate-800 whitespace-nowrap">{franchise.id}</td>
                     <td className="py-3 px-2.5">
@@ -338,6 +344,30 @@ export default function FranchiseManagement() {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Pagination Controls */}
+        <div className="p-4 border-t border-slate-200/60 flex items-center justify-between bg-slate-50/30 rounded-b-2xl">
+          <span className="text-xs text-deep-maroon font-semibold">
+            Showing <span className="font-bold">{paginatedFranchises.length > 0 ? (currentPage - 1) * 10 + 1 : 0}</span> to <span className="font-bold">{Math.min(currentPage * 10, totalFranchises)}</span> of <span className="font-bold">{totalFranchises}</span> franchises
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-1.5 text-xs font-bold rounded-lg text-white bg-deep-maroon hover:bg-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Previous
+            </button>
+            <span className="text-xs font-bold text-deep-maroon px-2">Page {currentPage} of {totalPages || 1}</span>
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages || totalPages === 0}
+              className="px-3 py-1.5 text-xs font-bold rounded-lg text-white bg-deep-maroon hover:bg-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Next
+            </button>
+          </div>
         </div>
       </div>
 
